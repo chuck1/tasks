@@ -132,6 +132,8 @@ def _list2(tasks):
             print('  assigned: {}'.format(' '.join(t['assigned'])))
         if t.get('tags', []):
             print('  tags: {}'.format(' '.join(t['tags'])))
+        if t.get('due', None):
+            print('  due: {}'.format(t['due'].astimezone(tz)))
 
 
 @command('list')
@@ -149,6 +151,16 @@ def _help(s, l):
     print('commands:')
     for k in commands.keys():
         print('  /' + k)
+
+_prefix = ''
+
+@command('pre')
+def _pre(s, l):
+    global _prefix
+    l.pop(0)
+    s = ' '.join(l)
+    print('setting pre to: {}'.format(repr(s)))
+    _prefix = s
 
 tz = pytz.timezone('US/Pacific')
 utc = datetime.timezone.utc
@@ -186,6 +198,9 @@ def process_due_date(s):
     return None
 
 def add_task(s, l):
+
+    l = _prefix.split(' ') + l
+
     people = []
     tags = []
 
@@ -221,11 +236,15 @@ def add_task(s, l):
     db.add_task(title, people, tags, due)
 
 def process(s):
+    if s == '':
+        return
+
     l = s.split(' ')
     if l[0][0] == '/':
         c = l[0][1:]
         if c not in commands:
-            print(red('unrecognized command: {}'.format(c)))
+            print(crayons.red('unrecognized command: {}'.format(c)))
+            return
         return commands[c](s, l)
     return add_task(s, l)
 
@@ -243,7 +262,7 @@ def main(argv):
     print('type /help for help')
     while True:
         try:
-            process(input(prompt))
+            process(input(_prefix + prompt))
         except EOFError as e:
             break
     
