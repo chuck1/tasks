@@ -10,6 +10,7 @@ import bson.json_util
 import crayons
 
 prompt = '> '
+me = 'charles'
 
 class Status:
     OPEN = 0
@@ -24,6 +25,7 @@ class Person:
 sample_task = {
         'title': '',
         'tags': [],
+        'createdby': 'charles',
         'assigned': ['charles'],
         'created': datetime.datetime.utcnow(),
         'due': None,
@@ -42,10 +44,11 @@ class Database:
         with open(self.filename, 'w') as f:
             json.dump({'tasks':self.tasks, 'people':self.people}, f, indent=8, default=bson.json_util.default)
 
-    def add_task(self, title, assigned, tags, due):
+    def add_task(self, title, createdby, assigned, tags, due):
         t = {}
         
         t['title'] = title
+        t['createdby'] = createdby
         t['assigned'] = assigned
         t['tags'] = tags
         t['due'] = due
@@ -77,7 +80,6 @@ class Database:
 db = Database()
 db.read()
 
-me = 'charles'
 
 commands = {}
 
@@ -97,10 +99,7 @@ def _find(s, l):
     /assigned none
       tasks to which noone is assigned
     """
-    print('find')
     l.pop(0)
-    print(s)
-    print(l)
     assigned = []
     none_assigned = False
 
@@ -110,7 +109,10 @@ def _find(s, l):
             if l[0] == 'none':
                 none_assigned = True
             else:
-                while l[0].startswith('@'):
+                while l:
+                    if not l[0].startswith('@'):
+                        break
+
                     a = l.pop(0)[1:]
                 
                     try:
@@ -128,17 +130,17 @@ def _find(s, l):
 def _list2(tasks):
     for t in tasks:
         print(t['title'])
+        if t.get('createdby', None):
+            print('  createdby: {}'.format(t['createdby']))
         if t.get('assigned', []):
-            print('  assigned: {}'.format(' '.join(t['assigned'])))
+            print('  assigned:  {}'.format(' '.join(t['assigned'])))
         if t.get('tags', []):
-            print('  tags: {}'.format(' '.join(t['tags'])))
+            print('  tags:      {}'.format(' '.join(t['tags'])))
         if t.get('due', None):
-            print('  due: {}'.format(t['due'].astimezone(tz)))
-
+            print('  due:       {}'.format(t['due'].astimezone(tz)))
 
 @command('list')
 def _list(s, l):
-    print('Tasks:')
     _list2(db.tasks)
 
 @command('help')
@@ -233,7 +235,7 @@ def add_task(s, l):
 
     title = s
     
-    db.add_task(title, people, tags, due)
+    db.add_task(title, me, people, tags, due)
 
 def process(s):
     if s == '':
