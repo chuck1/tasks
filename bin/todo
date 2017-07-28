@@ -1,4 +1,0 @@
-#!/usr/bin/python3.6
-import sys
-import todo
-todo.main(sys.argv)
