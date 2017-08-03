@@ -39,7 +39,6 @@ class Session:
 
         self.user = self.db.users.find_one({'username':username})
         assert self.user is not None
-        print(self.user)
 
     def task(self, title, due=None):
         
@@ -73,8 +72,8 @@ def print_find(title_regex):
         
         print(color(due_str), crayons.white(t['title'], bold=True))
 
-
-print_find('')
+if __name__ == '__main__':
+    print_find('')
 
 
 
