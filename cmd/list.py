@@ -1,5 +1,5 @@
 
 import todo
 
-todo.print_find('')
+todo.prnt(todo.find(''))
 

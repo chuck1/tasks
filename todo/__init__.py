@@ -41,11 +41,15 @@ class Session:
         assert self.user is not None
 
     def task(self, title, due=None):
-        
+        if due:
+            due_utc = due.astimezone(pytz.utc)
+        else:
+            due_utc = None
+
         t = {
                 'title': title,
                 'creator': self.user['_id'],
-                'due': due.astimezone(pytz.utc)
+                'due': due_utc
                 }
     
         return self.db.tasks.insert_one(t)
@@ -54,26 +58,44 @@ class Session:
         for t in self.db.tasks.find({'title':{'$regex':title_regex}}).sort('due',pymongo.ASCENDING):
             yield t
 
+    def delete_many(self, title_regex):
+        ret = self.db.tasks.delete_many({'title':{'$regex':title_regex}})
+        return ret
+
 session = Session('charles')
 
 def task(title, due=None):
     return session.task(title, due)
 
-def print_find(title_regex):
-    for t in session.find(title_regex):
-        due = pytz.utc.localize(t['due'])
-        due = due.astimezone(tz)
-        due_str = '{:25s}'.format(str(due))
+class _Task:
+    def __init__(self, d):
+        self.d = d
+    def due_str(self):
+        due = self.d['due']
+        if due:
+            due = pytz.utc.localize(due)
+            due = due.astimezone(tz)
+            due_str = '{:25s}'.format(str(due))
 
-        if due < now():
-            color = crayons.red
+            if due < now():
+                due_str = crayons.red(due_str)
         else:
-            color = crayons.white
+            due_str = ' ' * 25
         
-        print(color(due_str), crayons.white(t['title'], bold=True))
+        return due_str
+
+def find(title):
+    yield from session.find(title)
+
+def prnt(g):
+    for t in g:
+        t = _Task(t)
+        id_str = str(t.d['_id'])[-4:]
+        print(id_str, t.due_str(), crayons.white(t.d['title'], bold=True))
 
 if __name__ == '__main__':
     print_find('')
+
 
 
 
