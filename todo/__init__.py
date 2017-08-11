@@ -2,6 +2,7 @@ import time
 import datetime
 from pprint import pprint
 import re
+import enum
 
 import crayons
 import pytz
@@ -10,6 +11,11 @@ import pymongo
 # datetime
 tz = pytz.timezone('US/Pacific')
 #utc = datetime.timezone.utc
+
+class Status(enum.Enum):
+    NONE = 0
+    COMPLETE = 1
+    CANCELLED = 2
 
 def now():
     return datetime.datetime.now(datetime.timezone.utc).astimezone(tz)
@@ -49,18 +55,40 @@ class Session:
         t = {
                 'title': title,
                 'creator': self.user['_id'],
-                'due': due_utc
+                'due': due_utc,
+                'status': Status.NONE.value,
                 }
     
         return self.db.tasks.insert_one(t)
- 
+    
+    def filter_title_regex(self, title_regex):
+        filt = {
+                '$and': [
+                    {'title': {'$regex': title_regex}},
+                    {'status': {'$eq': Status.NONE.value}},
+                    ]
+                }
+        return filt
+
     def find(self, title_regex):
-        for t in self.db.tasks.find({'title':{'$regex':title_regex}}).sort('due',pymongo.ASCENDING):
+        filt = self.filter_title_regex(title_regex)
+
+        for t in self.db.tasks.find(filt).sort('due',pymongo.ASCENDING):
             yield t
 
     def delete_many(self, title_regex):
-        ret = self.db.tasks.delete_many({'title':{'$regex':title_regex}})
+        filt = {'title':{'$regex':title_regex}}
+
+        ret = self.db.tasks.delete_many(filt)
+
         return ret
+
+    def update_status(self, title_regex, status):
+        assert isinstance(status, Status)
+
+        filt = {'title': {'$regex': title_regex}}
+
+        self.db.tasks.update_many(filt, {'$set': {'status': status.value}})
 
 session = Session('charles')
 
@@ -80,18 +108,25 @@ class _Task:
             if due < now():
                 due_str = crayons.red(due_str)
         else:
-            due_str = ' ' * 25
+            due_str = ' '*25
         
         return due_str
 
+    def status_str(self):
+        s = Status(self.d.get('status',0))
+        return '{:10s}'.format(s.name)
+
 def find(title):
     yield from session.find(title)
+
+def update_status(title, status):
+    session.update_status(title, status)
 
 def prnt(g):
     for t in g:
         t = _Task(t)
         id_str = str(t.d['_id'])[-4:]
-        print(id_str, t.due_str(), crayons.white(t.d['title'], bold=True))
+        print(id_str, t.due_str(), t.status_str(), crayons.white(t.d['title'], bold=True))
 
 if __name__ == '__main__':
     print_find('')
