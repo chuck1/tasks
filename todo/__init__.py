@@ -1,3 +1,4 @@
+import os
 import time
 import datetime
 from pprint import pprint
@@ -23,14 +24,34 @@ def now():
 def weeks(i):
     return datetime.timedelta(weeks=i)
 
-def monday(h, m=0, s=0):
-    i = 0
+def day_of_week(i, h, m, s):
     today = now().date()
     d = i - today.weekday()
     if d <= 0:
         d += 7
 
     return local_combine(today + datetime.timedelta(days=d), h, m, s)
+
+def monday(h, m=0, s=0):
+    return day_of_week(0, h, m, s)
+
+def tuesday(h, m=0, s=0):
+    return day_of_week(1, h, m, s)
+
+def wednesday(h, m=0, s=0):
+    return day_of_week(2, h, m, s)
+
+def thursday(h, m=0, s=0):
+    return day_of_week(3, h, m, s)
+
+def friday(h, m=0, s=0):
+    return day_of_week(4, h, m, s)
+
+def saturday(h, m=0, s=0):
+    return day_of_week(5, h, m, s)
+
+def sunday(h, m=0, s=0):
+    return day_of_week(6, h, m, s)
 
 def local_combine(date, h, m, s):
     return tz.localize(datetime.datetime.combine(date, datetime.time(h, m, s)))
@@ -40,7 +61,7 @@ def local_datetime(year, month, day, hour=0, minute=0, second=0):
 
 class Session:
     def __init__(self, username):
-        client = pymongo.MongoClient()
+        client = pymongo.MongoClient(os.environ['MONGO_URI'])
         self.db = client.todo_database
 
         self.user = self.db.users.find_one({'username':username})
@@ -51,6 +72,9 @@ class Session:
             due_utc = due.astimezone(pytz.utc)
         else:
             due_utc = None
+
+        print(due)
+        print(due_utc)
 
         t = {
                 'title': title,
@@ -128,8 +152,6 @@ def prnt(g):
         id_str = str(t.d['_id'])[-4:]
         print(id_str, t.due_str(), t.status_str(), crayons.white(t.d['title'], bold=True))
 
-if __name__ == '__main__':
-    print_find('')
 
 
 
