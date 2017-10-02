@@ -26,6 +26,9 @@ def weeks(i):
     return datetime.timedelta(weeks=i)
 
 def day_of_week(i, h, m, s):
+    """
+    returns datetime for the next day of the week indicated by the index
+    """
     today = now().date()
     d = i - today.weekday()
     if d <= 0:
@@ -34,24 +37,45 @@ def day_of_week(i, h, m, s):
     return local_combine(today + datetime.timedelta(days=d), h, m, s)
 
 def monday(h, m=0, s=0):
+    """
+    returns datetime object for next monday
+    """
     return day_of_week(0, h, m, s)
 
 def tuesday(h, m=0, s=0):
+    """
+    returns datetime object for next tuesday
+    """
     return day_of_week(1, h, m, s)
 
 def wednesday(h, m=0, s=0):
+    """
+    returns datetime object for next wednesday
+    """
     return day_of_week(2, h, m, s)
 
 def thursday(h, m=0, s=0):
+    """
+    returns datetime object for next thursday
+    """
     return day_of_week(3, h, m, s)
 
 def friday(h, m=0, s=0):
+    """
+    returns datetime object for next friday
+    """
     return day_of_week(4, h, m, s)
 
 def saturday(h, m=0, s=0):
+    """
+    returns datetime object for next saturday
+    """
     return day_of_week(5, h, m, s)
 
 def sunday(h, m=0, s=0):
+    """
+    returns datetime object for next sunday
+    """
     return day_of_week(6, h, m, s)
 
 def local_combine(date, h, m, s):
@@ -74,6 +98,12 @@ class Session:
         assert self.user is not None
 
     def task(self, title, due=None):
+        """
+        :param title: title
+        :param due: datetime object
+
+        create a new task
+        """
         if due:
             due_utc = due.astimezone(pytz.utc)
         else:
@@ -121,9 +151,6 @@ class Session:
         self.db.tasks.update_many(filt, {'$set': {'status': status.value}})
 
 #session = Session('charles')
-
-def task(title, due=None):
-    return session.task(title, due)
 
 class _Task:
     def __init__(self, d):
