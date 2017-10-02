@@ -15,14 +15,14 @@ with open(os.path.join(c['name'], '__init__.py')) as f:
     version = re.findall("^__version__ = '(.*)'", f.read())[0]
 
 kwargs = {
-        'name': c['name'],
+        'name': 'todo',
         'version': version,
         'description': c['description'],
         'url': c['url'],
         'author': c['author'],
         'author_email': c['author_email'],
         'license': c['license'],
-        'packages': [],
+        'packages': ['todo'],
         'zip_safe': False,
         'install_requires': [],
         }
