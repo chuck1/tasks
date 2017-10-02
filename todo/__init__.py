@@ -85,6 +85,15 @@ def local_datetime(year, month, day, hour=0, minute=0, second=0):
     return tz.localize(datetime.datetime(year, month, day, hour, minute, second))
 
 class Session:
+    """
+    elements of the task record
+
+    * title - string
+    * creator - ObjectID of user
+    * due - datetime object
+    * status - integer
+
+    """
     def __init__(self, username):
         if 'MONGO_URI' in os.environ:
             client = pymongo.MongoClient(os.environ['MONGO_URI'])
@@ -144,6 +153,9 @@ class Session:
         return ret
 
     def update_status(self, title_regex, status):
+        """
+        update the status of all tasks whose title matches the regex
+        """
         assert isinstance(status, Status)
 
         filt = {'title': {'$regex': title_regex}}
