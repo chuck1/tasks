@@ -24,7 +24,11 @@ kwargs = {
         'license': c['license'],
         'packages': ['todo'],
         'zip_safe': False,
-        'install_requires': [],
+        'install_requires': [
+            'crayons',
+            'pytz',
+            'pymongo',
+            ],
         }
 
 setup(**kwargs)
