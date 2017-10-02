@@ -62,7 +62,12 @@ def local_datetime(year, month, day, hour=0, minute=0, second=0):
 
 class Session:
     def __init__(self, username):
-        client = pymongo.MongoClient(os.environ['MONGO_URI'])
+        if 'MONGO_URI' in os.environ:
+            client = pymongo.MongoClient(os.environ['MONGO_URI'])
+        else:
+            client = pymongo.MongoClient()
+            warnings.warn("using local mongo server")
+
         self.db = client.todo_database
 
         self.user = self.db.users.find_one({'username':username})
@@ -115,7 +120,7 @@ class Session:
 
         self.db.tasks.update_many(filt, {'$set': {'status': status.value}})
 
-session = Session('charles')
+#session = Session('charles')
 
 def task(title, due=None):
     return session.task(title, due)
