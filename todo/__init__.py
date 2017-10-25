@@ -130,7 +130,10 @@ class Session:
                 }
     
         return self.db.tasks.insert_one(t)
-    
+ 
+    def filter_open(self):
+        return {'status': {'$eq': Status.NONE.value}}
+   
     def filter_title_1(self, s):
         return fand([
             self.filter_title(s),
