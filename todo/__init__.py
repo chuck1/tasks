@@ -1,4 +1,5 @@
 __version__ = '0.1'
+import collections
 import os
 import time
 import datetime
@@ -85,6 +86,30 @@ def local_combine(date, h, m, s):
 def local_datetime(year, month, day, hour=0, minute=0, second=0):
     return tz.localize(datetime.datetime(year, month, day, hour, minute, second))
 
+class TaskTree:
+    def __init__(self, session, tasks):
+        self.session = session
+        self.tree = collections.OrderedDict()
+
+        for t in tasks:
+            self.get(t['_id'])
+
+    def get(self, t_id):
+        
+        t = self.session.db.tasks.find_one({'_id': t_id})
+
+        p = t.get('parent', None)
+
+        if p is None:
+            d = self.tree
+        else:
+            d = self.get(p)
+        
+        if t_id not in d.keys():
+            d[t_id] = collections.OrderedDict()
+
+        return d[t_id]
+
 class Session:
     """
     elements of the task record
@@ -150,6 +175,9 @@ class Session:
         for t in self.db.tasks.find(filt).sort('due', pymongo.ASCENDING):
             yield t
     
+    def tree(self, filt):
+        return TaskTree(self, self.db.tasks.find(filt).sort('due', pymongo.ASCENDING))
+
     def delete_many(self, filt):
         return self.db.tasks.delete_many(filt)
 
@@ -161,17 +189,56 @@ class Session:
         self.db.tasks.update_many(filt, {'$set': {'status': status.value}})
 
     def show(self, filt):
-        for t in self.find(filt):
-            t = _Task(t)
-            id_str = str(t.d['_id'])#[-4:]
-            print(id_str, t.due_str(), t.status_str(), crayons.white(t.d['title'], bold=True))
+        
+        print(("{{:24}} {{:25}} {{:11}}{{:{}}} {{}}").format(_Task.column_width['title']).format("id", "due", "status", "title", "tags"))
 
+        for t in self.find(filt):
+
+            t = _Task(t)
+            id_str = str(t.d['_id']) + ' '
+            str_title = crayons.white("{:48} ".format(t.d['title'][:48]), bold=True)
+            str_tags = "{:32}".format(str(', '.join(t.d.get('tags',[])))[:32])
+
+            print(id_str + t.due_str() + t.status_str() + str_title + str_tags)
+    
+    def show_tree(self, filt):
+        self._show_tree(self.tree(filt).tree)
+
+    def _show_tree(self, tree, level=0):
+        
+        for t_id, subtree in tree.items():
+            t = self.db.tasks.find_one({'_id': t_id})
+            
+            self.show_tasks([t], level)
+            
+            self._show_tree(subtree, level + 1)
+
+    def show_tasks(self, tasks, level):
+        
+        for t in tasks:
+
+            t = _Task(t)
+            id_str = str(t.d['_id']) + ' '
+            str_title = crayons.white("{:48} ".format(t.d['title'][:48]), bold=True)
+            str_tags = "{:32}".format(str(', '.join(t.d.get('tags',[])))[:32])
+
+            print(id_str + t.due_str() + t.status_str() + ('  ' * level) + str_title + str_tags)
+
+    def add_tag(self, filt, tag):
+        self.db.tasks.update(filt, {"$addToSet": {"tags": tag}})
+
+    def set_parent(self, filt, id_str):
+        self.db.tasks.update_many(filt, {'$set': {'parent': bson.objectid.ObjectId(id_str)}})
+        
 
 def fand(f):
     assert isinstance(f, list)
     return {'$and': f}
 
 class _Task:
+    
+    column_width = {'title': 48}
+
     def __init__(self, d):
         self.d = d
     def due_str(self):
@@ -179,18 +246,18 @@ class _Task:
         if due:
             due = pytz.utc.localize(due)
             due = due.astimezone(tz)
-            due_str = '{:25s}'.format(str(due))
+            due_str = '{:26s}'.format(str(due))
 
             if due < now():
                 due_str = crayons.red(due_str)
         else:
-            due_str = ' '*25
+            due_str = '{:26s}'.format('')
         
         return due_str
 
     def status_str(self):
         s = Status(self.d.get('status',0))
-        return '{:10s}'.format(s.name)
+        return '{:11s}'.format(s.name)
 
 
 
