@@ -124,6 +124,7 @@ class Session:
         if 'MONGO_URI' in os.environ:
             client = pymongo.MongoClient(os.environ['MONGO_URI'])
         else:
+            raise RuntimeError()
             client = pymongo.MongoClient()
             warnings.warn("using local mongo server")
 
@@ -204,7 +205,22 @@ class Session:
             str_tags = "{:32}".format(str(', '.join(t.d.get('tags',[])))[:32])
 
             print(id_str + t.due_str() + t.status_str() + str_title + str_tags)
-    
+ 
+    def iter_tree(self, filt=None):
+        if filt is None:
+            filt = self.filter_open()
+
+        yield from self._iter_tree(self.tree(filt).tree)
+
+    def _iter_tree(self, tree, level=0):
+        
+        for t_id, subtree in tree.items():
+            t = self.db.tasks.find_one({'_id': t_id})
+            
+            yield t, level
+            
+            yield from self._iter_tree(subtree, level + 1)
+   
     def show_tree(self, filt=None):
         if filt is None:
             filt = self.filter_open()
