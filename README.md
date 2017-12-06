@@ -12,4 +12,11 @@ This zip file is created by running
 
     bash script/deploy.bash
 
+Amazon serives used:
+
+* Lambda
+* API Gateway
+* Cognito
+* S3
+
 
