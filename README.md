@@ -19,4 +19,15 @@ Amazon serives used:
 * Cognito
 * S3
 
+[This tutorial](https://aws.amazon.com/getting-started/serverless-web-app/) was very helpful.
+Other useful pages: [](http://docs.aws.amazon.com/cognito/latest/developerguide/using-amazon-cognito-identity-user-pools-javascript-example-authenticating-admin-created-user.html).
+
+
+Issues I encountered:
+
+* the lambda function must return a valid API response and in the header section it must have a "Access-Control-Allow-Origin" value.
+* In Cognito, it appears that you cannot use the email address as the username exactly, but you can replace "@" with "-at-" for the username.
+* needed to allow connection from any IP in mongodb atlas
+
+
 
