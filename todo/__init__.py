@@ -132,17 +132,20 @@ class Session:
         self.user = self.db.users.find_one({'username':username})
         assert self.user is not None
 
-    def task(self, title, due=None):
+    def task(self, title, due=None, parent_id=None):
         """
         :param title: title
         :param due: datetime object
 
         create a new task
         """
-        if due:
+        if due is not None:
             due_utc = due.astimezone(pytz.utc)
         else:
             due_utc = None
+
+        if parent_id is not None:
+            parent_id = bson.objectid.ObjectId(parent_id)
 
         print(due)
         print(due_utc)
@@ -152,6 +155,7 @@ class Session:
                 'creator': self.user['_id'],
                 'due': due_utc,
                 'status': Status.NONE.value,
+                'parent': parent_id,
                 }
     
         return self.db.tasks.insert_one(t)
@@ -201,7 +205,10 @@ class Session:
 
             print(id_str + t.due_str() + t.status_str() + str_title + str_tags)
     
-    def show_tree(self, filt):
+    def show_tree(self, filt=None):
+        if filt is None:
+            filt = self.filter_open()
+
         self._show_tree(self.tree(filt).tree)
 
     def _show_tree(self, tree, level=0):
