@@ -1,10 +1,23 @@
+body{
+	font-family: "Courier New", Courier, monospace;
+	/*font-size: 10px;*/
+}
 div.task_row{
 	overflow:auto;
-	font-family: "Courier New", Courier, monospace;
+	border-style: solid; 
+	border-width: 1px;
 }
-div.task_row div{
-	float:left;
+
+@media screen and (min-width: 480px) 
+{
+	div.task_row div
+	{
+		float: left;
+	}
+	div.task_due{
+		width: 200px;
+	}
 }
-div.task_due{
-	width:200px;
-}
+
+
+

@@ -1,25 +1,27 @@
 <html>
-<head><link rel="stylesheet" href="css/default.css"></head>
+	<head>
+		<link rel="stylesheet" href="css/default.css">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	</head>
 	<body>
 		<div id="divTasks"></div>
 		
 		<div id="divTaskCreate" style="display:default">
 			<h1>Create</h1>
-            <form id="formCreate">
-              <input type="text" id="formCreateInputTitle" placeholder="Title" required>
-			  <input type="text" id="formCreateInputDue" placeholder="Due date (UTC)">
-			  <select id="formCreateInputParent"></select>
-              
-              <input type="submit" value="Create">
-            </form>
+	            	<form id="formCreate">
+				<input type="text" id="formCreateInputTitle" placeholder="Title" required><br>
+				<input type="text" id="formCreateInputDue" placeholder="Due date (UTC)"><br>
+				<select id="formCreateInputParent"></select><br>
+				<input type="submit" value="Create">
+	        	</form>
 		</div>
 		
 		<script src="js/vendor/jquery-3.1.0.js"></script>
-        <script src="js/vendor/bootstrap.min.js"></script>
-        <script src="js/vendor/aws-cognito-sdk.min.js"></script>
-        <script src="js/vendor/amazon-cognito-identity.min.js"></script>
+	        <script src="js/vendor/bootstrap.min.js"></script>
+	        <script src="js/vendor/aws-cognito-sdk.min.js"></script>
+	        <script src="js/vendor/amazon-cognito-identity.min.js"></script>
 		<script src="js/config.js"></script>
-        <script src="js/cognito-auth.js"></script>
+	        <script src="js/cognito-auth.js"></script>
 		<script src="js/index.js"></script>
 	</body>
 </html>
