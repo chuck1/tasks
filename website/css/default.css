@@ -1,0 +1,10 @@
+div.task_row{
+	overflow:auto;
+	font-family: "Courier New", Courier, monospace;
+}
+div.task_row div{
+	float:left;
+}
+div.task_due{
+	width:200px;
+}
