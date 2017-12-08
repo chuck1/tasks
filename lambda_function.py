@@ -1,43 +1,16 @@
 import datetime
-import pytz
 import json
+import traceback
+import pytz
 import todo
 
-def stringize_field(task, name):
-    if task.get(name, None) is not None:
-        task[name] = str(task[name])
+def taskList(session, body):
+    tree = session.tree(session.filter_open())
+    return todo.safeDict(tree.tree)
 
-def process_tasks(tasks):
+def taskCreate(session, body):
 
-    for task, level in tasks:
-        task = dict(task)
-        
-        stringize_field(task, '_id')
-        stringize_field(task, 'creator')
-        stringize_field(task, 'parent')
-        stringize_field(task, 'due')
-
-        task["status"] = todo.Status(task["status"]).name
-        
-        print(task)
-
-        yield (task, level)
-
-def tasks_list(session):
-    
-    tasks = list(process_tasks(session.iter_tree(session.filter_open())))
-    
-    responseBody = json.dumps(tasks)
-
-    return responseBody
-
-def task_create(session, body):
-
-    if body["due"]:
-        due_naive = datetime.datetime.strptime(body["due"], "%Y-%m-%d %H:%M")
-        due = pytz.utc.localize(due_naive)
-    else:
-        due = None
+    due = todo.stringToDatetime(body["due"])
     
     if body["parent_id"]:
         parent_id = body["parent_id"]
@@ -49,56 +22,82 @@ def task_create(session, body):
             due,
             parent_id, )
 
-    return tasks_list(session)
+    return taskList(session, None)
 
-def task_update_status(session, body):
-
+def taskUpdateDue(session, body):
     task_id = body["task_id"]
-
-    status = todo.Status[body["status"]]
-
-    session.update_status(session.filter_id(task_id), status)
-
+    due = todo.stringToDatetime(body["due_str"])
+    session.updateDue(session.filter_id(task_id), due)
     return "success"
+
+def taskUpdateStatus(session, body):
+    task_id = body["task_id"]
+    status = todo.Status[body["status"]]
+    session.updateStatus(session.filter_id(task_id), status)
+    return "success"
+
+def taskUpdateTitle(session, body):
+    task_id = body["task_id"]
+    title = body["title"]
+    session.updateTitle(session.filter_id(task_id), title)
+    return "success"
+
+def taskUpdateParent(session, body):
+    task_id = body["task_id"]
+    parent_id_str = body["parent_id_str"]
+    session.updateParent(session.filter_id(task_id), parent_id_str)
+    return "success"
+
+def errorResponse(responseBody):
+    return {
+        "statusCode": 400,
+        "headers": {
+            "Access-Control-Allow-Origin": "*",
+        },
+        "body": json.dumps(responseBody),
+        "isBase64Encoded": False}
+
+functions = {
+        "list": taskList,
+        "create": taskCreate,
+        "update_status": taskUpdateStatus,
+        "update_title": taskUpdateTitle,
+        "update_parent": taskUpdateParent,
+        }
+
+def processBody(event, session, body):
+    
+    try:
+        command = body["command"]
+        f = functions[command]
+        return f(session, body)
+    except Exception as e:
+        traceback.print_exc()
+        return repr(e)
 
 def lambda_handler(event, context):
     
     session = None
+    responseBody = None
+
     try:
         body = json.loads(event["body"])
-        command = body["command"]
         username = event["requestContext"]["authorizer"]["claims"]['cognito:username']
         session = todo.Session(username)
-    except Exception as e:
-        responseBody = repr(e) + " " + str(e) + "event: " + str(event)
+        responseBody = json.dumps([processBody(event, session, b) for b in body])
+        
         return {
             "statusCode": 200,
             "headers": {
                 'Access-Control-Allow-Origin': '*',
             },
-            "body": json.dumps(responseBody),
+            "body": responseBody,
             "isBase64Encoded": False}
-    
-    try:
-        if command == "list":
-            responseBody = tasks_list(session)
-        elif command == "create":
-            responseBody = task_create(session, body)
-        elif command == "update_status":
-            responseBody = task_update_status(session, body)
-        else:
-            raise RuntimeError("invalid command")
-    except Exception as e:
-        responseBody = repr(e) + " " + str(e)
-    
 
-    return {
-        "statusCode": 200,
-        "headers": {
-            'Access-Control-Allow-Origin': '*',
-        },
-        "body": json.dumps(responseBody),
-        "isBase64Encoded": False}
+    except Exception as e:
+        traceback.print_exc()
+        return errorResponse(repr(e) + " event: " + str(event))
+    
 
 
 

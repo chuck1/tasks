@@ -1,10 +1,11 @@
 <html>
 	<head>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
 		<link rel="stylesheet" href="css/default.css">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
 	<body>
-		<div id="divTasks"></div>
+		<div id="divTasks" class="container"></div>
 		
 		<div id="divTaskCreate" style="display:default">
 			<h1>Create</h1>
@@ -18,9 +19,12 @@
 
 		<div id="divTaskDetail">
 			<button id="back">back</button><br>
-			Title: <span id="title"></span><br>
+			<form id="formTaskEdit">
+			Title: <input type="text" id="title"></input><br>
 			Due: <span id="due"></span><br>
-			Parent: <span id="parent"></span><br>
+			Parent: <select id="parent"></select><br>
+			<input type="submit" value="Update"><br>
+			</form>
 			Status: <span id="status"></span><br>
 			<button id="complete">complete</button><br>
 			<button id="cancelled">cancelled</button><br>
@@ -33,5 +37,7 @@
 		<script src="js/config.js"></script>
 	        <script src="js/cognito-auth.js"></script>
 		<script src="js/index.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+	    	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
 	</body>
 </html>

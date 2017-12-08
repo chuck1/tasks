@@ -16,6 +16,19 @@ import bson
 tz = pytz.timezone('US/Pacific')
 #utc = datetime.timezone.utc
 
+def datetimeToString(d):
+    if d is None: return "None"
+    d = d.astimezone(pytz.utc)
+    return d.strftime("%Y-%m-%d %H:%MZ")
+
+def stringToDatetime(s):
+    if s:
+        naive = datetime.datetime.strptime(s, "%Y-%m-%d %H:%MZ")
+        return pytz.utc.localize(naive)
+    else:
+        return None
+
+
 class Status(enum.Enum):
     NONE = 0
     COMPLETE = 1
@@ -86,17 +99,66 @@ def local_combine(date, h, m, s):
 def local_datetime(year, month, day, hour=0, minute=0, second=0):
     return tz.localize(datetime.datetime(year, month, day, hour, minute, second))
 
+"""
+tree = {
+    <task id>: {
+        "task": <task>,
+        "tree": {...}
+        }
+    }
+"""
+
+def stringize_field(task, name):
+    if task.get(name, None) is not None:
+        task[name] = str(task[name])
+
+
+def safeTask(task):
+
+        task = dict(task)
+        
+        stringize_field(task, '_id')
+        stringize_field(task, 'creator')
+        
+        task["parent"] = str(task.get("parent", None)) 
+
+        task["due"] = datetimeToString(task["due"])
+
+        task["status"] = Status(task["status"]).name
+        
+        print(task)
+
+        return task
+
+def safeBranch(branch):
+    return {"task": safeTask(branch["task"]), "tree": safeDict(branch["tree"])}
+
+def safeDict(subtree):
+    return collections.OrderedDict((str(task_id), safeBranch(branch)) for task_id, branch in subtree.items())
+
 class TaskTree:
     def __init__(self, session, tasks):
         self.session = session
         self.tree = collections.OrderedDict()
 
+        self.flat = dict()
+
         for t in tasks:
             self.get(t['_id'])
+    
+    def get_task(self, task_id):
+        if task_id in self.flat:
+            return self.flat[task_id]
+
+        task = self.session.db.tasks.find_one({'_id': task_id})
+
+        self.flat[task_id] = task
+        
+        return task
 
     def get(self, t_id):
         
-        t = self.session.db.tasks.find_one({'_id': t_id})
+        t = self.get_task(t_id)
 
         p = t.get('parent', None)
 
@@ -106,9 +168,13 @@ class TaskTree:
             d = self.get(p)
         
         if t_id not in d.keys():
-            d[t_id] = collections.OrderedDict()
+            d[t_id] = {
+                    "task": t,
+                    "tree": collections.OrderedDict()}
 
-        return d[t_id]
+        return d[t_id]["tree"]
+
+        
 
 class Session:
     """
@@ -186,13 +252,33 @@ class Session:
     def delete_many(self, filt):
         return self.db.tasks.delete_many(filt)
 
-    def update_status(self, filt, status):
+    def updateStatus(self, filt, status):
         """
         update the status of all tasks whose title matches the regex
         """
         assert isinstance(status, Status)
         self.db.tasks.update_many(filt, {'$set': {'status': status.value}})
 
+    def updateTitle(self, filt, title):
+        """
+        update the status of all tasks whose title matches the regex
+        """
+        self.db.tasks.update_many(filt, {'$set': {'title': title}})
+
+    def updateParent(self, filt, parent_id_str):
+        if not parent_id_str:
+            parent_id = None
+        elif parent_id_str == "None":
+            parent_id = None
+        else:
+            parent_id = bson.objectid.ObjectId(parent_id_str)
+
+        self.db.tasks.update_many(filt, {'$set': {'parent': parent_id}})
+ 
+    def updateDue(self, filt, due):
+        due = due.astimezone(pytz.utc) if due is not None else None
+        self.db.tasks.update_many(filt, {'$set': {'due': due}})
+ 
     def show(self, filt):
         
         print(("{{:24}} {{:25}} {{:11}}{{:{}}} {{}}").format(_Task.column_width['title']).format("id", "due", "status", "title", "tags"))
@@ -214,33 +300,24 @@ class Session:
 
     def _iter_tree(self, tree, level=0):
         
-        for t_id, subtree in tree.items():
-            t = self.db.tasks.find_one({'_id': t_id})
+        for t_id, branch in tree.items():
+            t = branch["task"]
             
             yield t, level
             
-            yield from self._iter_tree(subtree, level + 1)
+            yield from self._iter_tree(branch["tree"], level + 1)
    
     def show_tree(self, filt=None):
-        if filt is None:
-            filt = self.filter_open()
-
-        self._show_tree(self.tree(filt).tree)
-
-    def _show_tree(self, tree, level=0):
-        
-        for t_id, subtree in tree.items():
-            t = self.db.tasks.find_one({'_id': t_id})
-            
-            self.show_tasks([t], level)
-            
-            self._show_tree(subtree, level + 1)
+        for task, level in self.iter_tree(filt):
+            self.show_tasks([task], level)
 
     def show_tasks(self, tasks, level):
         
         for t in tasks:
+            assert t is not None
 
             t = _Task(t)
+
             id_str = str(t.d['_id']) + ' '
             str_title = crayons.white("{:48} ".format(t.d['title'][:48]), bold=True)
             str_tags = "{:32}".format(str(', '.join(t.d.get('tags',[])))[:32])
@@ -250,9 +327,7 @@ class Session:
     def add_tag(self, filt, tag):
         self.db.tasks.update(filt, {"$addToSet": {"tags": tag}})
 
-    def set_parent(self, filt, id_str):
-        self.db.tasks.update_many(filt, {'$set': {'parent': bson.objectid.ObjectId(id_str)}})
-        
+       
 
 def fand(f):
     assert isinstance(f, list)
@@ -265,11 +340,13 @@ class _Task:
     def __init__(self, d):
         self.d = d
     def due_str(self):
+        
         due = self.d['due']
+        #due_str = '{:26s}'.format(datetimeToString(due))
+        
         if due:
             due = pytz.utc.localize(due)
-            due = due.astimezone(tz)
-            due_str = '{:26s}'.format(str(due))
+            due_str = '{:26s}'.format(datetimeToString(due))
 
             if due < now():
                 due_str = crayons.red(due_str)
