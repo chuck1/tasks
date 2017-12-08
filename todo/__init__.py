@@ -179,7 +179,7 @@ class Session:
     def find(self, filt):
         for t in self.db.tasks.find(filt).sort('due', pymongo.ASCENDING):
             yield t
-    
+
     def tree(self, filt):
         return TaskTree(self, self.db.tasks.find(filt).sort('due', pymongo.ASCENDING))
 

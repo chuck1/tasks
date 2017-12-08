@@ -16,6 +16,8 @@ def process_tasks(tasks):
         stringize_field(task, 'creator')
         stringize_field(task, 'parent')
         stringize_field(task, 'due')
+
+        task["status"] = todo.Status(task["status"]).name
         
         print(task)
 
@@ -49,6 +51,16 @@ def task_create(session, body):
 
     return tasks_list(session)
 
+def task_update_status(session, body):
+
+    task_id = body["task_id"]
+
+    status = todo.Status[body["status"]]
+
+    session.update_status(session.filter_id(task_id), status)
+
+    return "success"
+
 def lambda_handler(event, context):
     
     session = None
@@ -72,6 +84,8 @@ def lambda_handler(event, context):
             responseBody = tasks_list(session)
         elif command == "create":
             responseBody = task_create(session, body)
+        elif command == "update_status":
+            responseBody = task_update_status(session, body)
         else:
             raise RuntimeError("invalid command")
     except Exception as e:
