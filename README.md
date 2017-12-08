@@ -8,6 +8,15 @@ The Todo project has the following parts
 * An AWS API Gateway API
 * A static website hosted on AWS S3. Uses javascript to send requests to the REST API.
 
+## Why
+
+* So I dont forget about tasks
+* Organize my project
+* Manage my time
+* Why not use existing tools?
+  * Flexibility and customization.
+  * Integration with other things.
+
 ## Web application
 
 I have begun to implement a web application frontend for todo using various AWS services, most importantly Lambda.
