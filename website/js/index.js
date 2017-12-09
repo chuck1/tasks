@@ -18,6 +18,8 @@ var myApp = window.myApp || {};
 	});
 
 	function callAPI(data, onSuccess, onFailure) {
+		console.log("callAPI");
+		console.log(data);
 		$.ajax({
 			method: 'POST',
 			url: _config.api.invokeUrl + '/tasks',
@@ -43,6 +45,11 @@ var myApp = window.myApp || {};
 			{
 				console.log('Response:');
 				console.log(result);
+
+				/* clear form */
+				$('#formCreateInputTitle').val("");
+				$('#formCreateInputDue').val("");
+				$('#formCreateInputParent').val("None");
 
 				var tasks = result[0];
 				myApp.tasks = tasks;
@@ -106,6 +113,37 @@ var myApp = window.myApp || {};
 		}
 		return null;
 	}
+	function treeGetSubtree(tree, task_id)
+	{
+		console.log("treeGetSubtree");
+
+		for(var task_id1 in tree)
+		{
+			if(tree.hasOwnProperty(task_id1))
+			{
+				var subtree = tree[task_id1]["tree"];
+
+				console.log(task_id1 + " == " + task_id);
+				if(task_id1 == task_id) {
+					console.log("return:");
+					console.log(subtree);
+					console.log(subtree == null);
+					return subtree;
+				}
+				
+				subtree = treeGetSubtree(subtree, task_id);
+
+				if(subtree == null) {
+					console.log("recursive returned null");
+				} else {
+					console.log("return from recursive:");
+					console.log(subtree);
+					return subtree;
+				}
+			}
+		}
+		return null;
+	}
 
 	function loadTaskList(tree)
 	{
@@ -143,7 +181,7 @@ var myApp = window.myApp || {};
 
 			var div_title = $("<div class=\"col-md\">");
 			div_title.html(task['title']);
-			div_title.css("padding-left", 20 * level);
+			div_title.css("padding-left", 40 * level);
 			div_title.click(function(){
 				loadTaskDetail(task);
 			});
@@ -235,21 +273,47 @@ var myApp = window.myApp || {};
 		
 		taskCreate(title, due, parent_id);
 	}
+	function handleFormTaskEditTaskCreate(event) {
+		var title = $('#divTaskEditTaskCreate #inputTitle').val();
+		var due   = $('#divTaskEditTaskCreate #inputDue').val();
+		var parent_id = myApp.taskCurrent["_id"];
 
-	function handleFormTaskEdit(event) {
+		console.log("handle create");
+		console.log(title);
+		console.log(due);
+		console.log(parent_id);
+
+		taskCreate(title, due, parent_id);
+	}
+	function moveTask(task_id, subtree1, subtree2)
+	{
+		subtree2[task_id] = subtree1[task_id];
+		delete subtree1[task_id];
+	}
+	function getSubtreeOrRoot(task_id)
+	{
+		if(task_id == "None") {
+			return myApp.tasks;
+		} else {
+			return treeGetSubtree(myApp.tasks, task_id);
+		}
+
+	}
+	function handleFormTaskEdit(event)
+	{
 		event.preventDefault();
 
 		task = myApp.taskCurrent;
-		
+
 		title = $("#divTaskDetail #title").val();
 		parent_id = $("#divTaskDetail #parent").val();
-		
+
 		commands = [];
 
 		if(title != task["title"])
 		{
 			task["title"] = title;
-			
+
 			commands.push({
 				"command": "update_title",
 				"task_id": task["_id"],
@@ -262,19 +326,24 @@ var myApp = window.myApp || {};
 			console.log("parent changed");
 			console.log(task["parent"]);
 			console.log(parent_id);
-			
-			console.log(treeGetBranch(myApp.tasks, task["parent"]));
-			console.log(treeGetBranch(myApp.tasks, parent_id));
+
+			var tree1 = getSubtreeOrRoot(task["parent"]);
+			var tree2 = getSubtreeOrRoot(parent_id);
+
+			console.log(tree1);
+			console.log(tree2);
 
 			task["parent"] = parent_id;
-			
+
+			moveTask(task["_id"], tree1, tree2);
+
 			commands.push({
 				"command": "update_parent",
 				"task_id": task["_id"],
 				"parent_id_str": parent_id
 			});
 		}
-		
+
 		if(commands.length > 0)
 		{
 			callAPI(
@@ -292,11 +361,15 @@ var myApp = window.myApp || {};
 				});
 		}
 	}
-	
+
 	$(function onDocReady() {
 		tasksList();
 		$('#formCreate').submit(handleFormCreate);
 		$('#formTaskEdit').submit(handleFormTaskEdit);
+		$('#divTaskEditTaskCreate form').submit(function(event) {
+			event.preventDefault();
+			handleFormTaskEditTaskCreate(event)
+		});
 	});
 
 }(jQuery));
