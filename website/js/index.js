@@ -195,6 +195,9 @@ var myApp = window.myApp || {};
 			inputParent.append($("<option value=\""+ task["_id"] +"\">"+task["title"]+"</option>"));
 		});
 	}
+	function taskUpdateStatusCurrent(status_string) {
+		taskUpdateStatus(myApp.taskCurrent, status_string);
+	}
 	function taskUpdateStatus(task, status_string) {
 		task["status"] = status_string;
 
@@ -254,9 +257,6 @@ var myApp = window.myApp || {};
 		/*$("#divTaskDetail #parent").html(task["parent"]);*/
 		$("#divTaskDetail #status").html(task["status"]);
 
-		$("#divTaskDetail #complete").click(function(){
-			taskUpdateStatus(task, "COMPLETE");
-		});
 	}
 
 	function handleFormCreate(event) {
@@ -370,6 +370,10 @@ var myApp = window.myApp || {};
 			event.preventDefault();
 			handleFormTaskEditTaskCreate(event)
 		});
+		$("#divTaskDetail #complete").click(function(){
+			taskUpdateStatusCurrent("COMPLETE");
+		});
+
 	});
 
 }(jQuery));
