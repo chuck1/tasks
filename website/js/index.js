@@ -165,28 +165,37 @@ var myApp = window.myApp || {};
 
 		treeIter(tree, 0, function(task, level) {
 			
-			if(task["status"] != "NONE"){
-				return;
+			if(task["status_last"] != "NONE"){
+				//return;
 			}
 
 			var div = $("<div class=\"row task_row\">");
 
-			var div_due = $("<div class=\"col-sm task_due\">");
+			var div_due = $("<div class=\"col-3 task_due\">");
+			var div_status = $("<div class=\"col-3\">");
 
-			if(task['due']){
-				div_due.html(task['due']);
+			if(task['due_last']){
+				div_due.html(task['due_last']);
 			}else{
 				div_due.html('none');
 			}
+			
+			//var div_status = $("<div class=\"\">");
+			div_status.html(task["status_last"]);
 
-			var div_title = $("<div class=\"col-md\">");
-			div_title.html(task['title']);
-			div_title.css("padding-left", 40 * level);
-			div_title.click(function(){
+			var div_title = $("<div class=\"col\">");
+
+			var span_title = $("<span></span>");
+			span_title.css("padding-left", 40 * level);
+			span_title.html(task['title']);
+			span_title.click(function(){
 				loadTaskDetail(task);
 			});
 
+			div_title.append(span_title);
+
 			div.append(div_due);
+			div.append(div_status);
 			div.append(div_title);
 
 			$('#divTasks').append(div);
@@ -199,7 +208,7 @@ var myApp = window.myApp || {};
 		taskUpdateStatus(myApp.taskCurrent, status_string);
 	}
 	function taskUpdateStatus(task, status_string) {
-		task["status"] = status_string;
+		//task["status"] = status_string;
 
 		callAPI(
 			[{
@@ -256,9 +265,7 @@ var myApp = window.myApp || {};
 		$("#divTaskDetail #due").html(task["due"]);
 		/*$("#divTaskDetail #parent").html(task["parent"]);*/
 		$("#divTaskDetail #status").html(task["status"]);
-
 	}
-
 	function handleFormCreate(event) {
 		var title = $('#formCreateInputTitle').val();
 		var due = $('#formCreateInputDue').val();
@@ -297,7 +304,6 @@ var myApp = window.myApp || {};
 		} else {
 			return treeGetSubtree(myApp.tasks, task_id);
 		}
-
 	}
 	function handleFormTaskEdit(event)
 	{
@@ -361,7 +367,6 @@ var myApp = window.myApp || {};
 				});
 		}
 	}
-
 	$(function onDocReady() {
 		tasksList();
 		$('#formCreate').submit(handleFormCreate);
@@ -377,3 +382,5 @@ var myApp = window.myApp || {};
 	});
 
 }(jQuery));
+
+

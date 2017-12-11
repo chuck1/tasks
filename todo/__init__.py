@@ -18,7 +18,10 @@ tz = pytz.timezone('US/Pacific')
 
 def datetimeToString(d):
     if d is None: return "None"
-    d = d.astimezone(pytz.utc)
+    try:
+        d = d.astimezone(pytz.utc)
+    except:
+        pytz.utc.localize(d)
     return d.strftime("%Y-%m-%d %H:%MZ")
 
 def stringToDatetime(s):
@@ -27,7 +30,6 @@ def stringToDatetime(s):
         return pytz.utc.localize(naive)
     else:
         return None
-
 
 class Status(enum.Enum):
     NONE = 0
@@ -115,23 +117,34 @@ def stringize_field(task, name):
     if task.get(name, None) is not None:
         task[name] = str(task[name])
 
-
 def safeTask(task):
 
-        task = dict(task)
-        
-        stringize_field(task, '_id')
-        stringize_field(task, 'creator')
-        
-        task["parent"] = str(task.get("parent", None)) 
+    task = dict(task)
 
-        task["due"] = datetimeToString(task["due"])
+    print(task)
+    
+    stringize_field(task, '_id')
+    stringize_field(task, 'creator')
+    
+    task["parent"] = str(task.get("parent", None)) 
 
-        task["status"] = Status(task["status"]).name
-        
-        print(task)
+    def func_due_elem(elem):
+        elem['value'] = datetimeToString(elem["value"])
 
-        return task
+    def func_status_elem(elem):
+        elem["value"] = Status(elem["value"]).name
+
+    task["due"] = [func_due_elem(elem) for elem in task["due"]]
+
+    task["status"] = [func_status_elem(elem) for elem in task["status"]]
+ 
+    task["due_last"] = datetimeToString(task["due_last"])
+
+    task["status_last"] = Status(task["status_last"]).name
+   
+    print(task)
+
+    return task
 
 def safeBranch(branch):
     return {"task": safeTask(branch["task"]), "tree": safeDict(branch["tree"])}
@@ -143,9 +156,11 @@ class TaskTree:
     def __init__(self, session, tasks):
         self.session = session
         self.tree = collections.OrderedDict()
-
-        self.flat = dict()
-
+        
+        tasks = list(tasks)
+        
+        self.flat = dict((t["_id"], t) for t in tasks)
+        
         for t in tasks:
             self.get(t['_id'])
     
@@ -154,6 +169,8 @@ class TaskTree:
             return self.flat[task_id]
 
         task = self.session.db.tasks.find_one({'_id': task_id})
+        task['due_last'] = task['due'][-1]['value']
+        task['status_last'] = task['status'][-1]['value']
 
         self.flat[task_id] = task
         
@@ -245,9 +262,35 @@ class Session:
                 }
     
         return self.db.tasks.insert_one(t)
- 
-    def filter_open(self):
-        return {'status': {'$eq': Status.NONE.value}}
+
+    def agg_due_last(self, fields=[]):
+        yield {"$project": dict([("due_last", {"$arrayElemAt": ["$due", -1]}) ] + [(f, 1) for f in self.fields + fields])}
+        yield {"$project": dict([("due_last", "$due_last.value")] + [(f, 1) for f in self.fields + fields])}
+
+    def agg_status_last(self):
+        yield {"$project": dict([("status_last", {"$arrayElemAt": ["$status", -1]}) ] + [(f, 1) for f in self.fields])}
+        yield {"$project": dict([("status_last", "$status_last.value")] + [(f, 1) for f in self.fields])}
+    
+    def agg_status_last_none(self):
+        yield {"$match": {"status_last": Status.NONE.value}}
+    
+    def agg_sort_due(self):
+        yield {"$sort": {"due_last": 1}}
+    
+    def agg_default(self):
+        yield from self.agg_status_last()
+        yield from self.agg_due_last(['status_last'])
+        yield from self.agg_status_last_none()
+        yield from self.agg_sort_due()
+
+    def task_view_default(self):
+        return self.aggregate(list(self.agg_default()))
+
+    def aggregate(self, stages):
+        return self.db.tasks.aggregate(stages)
+
+    #def filter_open(self):
+    #    return {'status': {'$eq': Status.NONE.value}}
    
     def filter_title_1(self, s):
         return fand([
@@ -265,8 +308,9 @@ class Session:
         for t in self.db.tasks.find(filt).sort('due', pymongo.ASCENDING):
             yield t
 
-    def tree(self, filt):
-        return TaskTree(self, self.db.tasks.find(filt).sort('due', pymongo.ASCENDING))
+    def tree(self, tasks):
+        #return TaskTree(self, self.db.tasks.find(filt).sort('due', pymongo.ASCENDING))
+        return TaskTree(self, tasks)
 
     def delete_many(self, filt):
         return self.db.tasks.delete_many(filt)
@@ -277,7 +321,7 @@ class Session:
         """
         assert isinstance(status, Status)
         elem = {"value": status.value, "dt": utcnow()}
-        self.db.tasks.update_many(filt, {'$push': {'status': elem})
+        self.db.tasks.update_many(filt, {'$push': {'status': elem}})
 
     def updateTitle(self, filt, title):
         """
@@ -298,7 +342,7 @@ class Session:
     def updateDue(self, filt, due):
         due = due.astimezone(pytz.utc) if due is not None else None
         elem = {"value": due, "dt": utcnow()}
-        self.db.tasks.update_many(filt, {'$push': {'due': elem})
+        self.db.tasks.update_many(filt, {'$push': {'due': elem}})
  
     def show(self, filt):
         
@@ -313,11 +357,8 @@ class Session:
 
             print(id_str + t.due_str() + t.status_str() + str_title + str_tags)
  
-    def iter_tree(self, filt=None):
-        if filt is None:
-            filt = self.filter_open()
-
-        yield from self._iter_tree(self.tree(filt).tree)
+    def iter_tree(self, tasks):
+        yield from self._iter_tree(self.tree(tasks).tree)
 
     def _iter_tree(self, tree, level=0):
         
@@ -328,8 +369,8 @@ class Session:
             
             yield from self._iter_tree(branch["tree"], level + 1)
    
-    def show_tree(self, filt=None):
-        for task, level in self.iter_tree(filt):
+    def show_tree(self, tasks):
+        for task, level in self.iter_tree(tasks):
             self.show_tasks([task], level)
 
     def show_tasks(self, tasks, level):
@@ -360,9 +401,9 @@ class _Task:
 
     def __init__(self, d):
         self.d = d
+
     def due_str(self):
-        
-        due = self.d['due']
+        due = self.d['due_last']
         #due_str = '{:26s}'.format(datetimeToString(due))
         
         if due:
@@ -377,7 +418,7 @@ class _Task:
         return due_str
 
     def status_str(self):
-        s = Status(self.d.get('status',0))
+        s = Status(self.d.get('status_last',0))
         return '{:11s}'.format(s.name)
 
 

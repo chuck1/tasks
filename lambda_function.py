@@ -5,7 +5,7 @@ import pytz
 import todo
 
 def taskList(session, body):
-    tree = session.tree(session.filter_open())
+    tree = session.tree(session.task_view_default())
     return todo.safeDict(tree.tree)
 
 def taskCreate(session, body):
@@ -98,6 +98,17 @@ def lambda_handler(event, context):
         traceback.print_exc()
         return errorResponse(repr(e) + " event: " + str(event))
     
+def test():
+    s = todo.Session('charlesrymal-at-gmail.com')
+    
+    print(taskList(s, None))
+
+
+
+
+
+
+
 
 
 

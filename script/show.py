@@ -1,9 +1,7 @@
 
 import todo
 
-t = todo.Session('charles')
+t = todo.Session('charlesrymal-at-gmail.com')
 
-t.iter_tree()
-
-t.show_tree(t.filter_open())
+t.show_tree(t.task_view_default())
 
