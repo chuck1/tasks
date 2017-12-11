@@ -37,6 +37,9 @@ class Status(enum.Enum):
 def now():
     return datetime.datetime.now(datetime.timezone.utc).astimezone(tz)
 
+def utcnow():
+    return datetime.datetime.now(datetime.timezone.utc)
+
 def weeks(i):
     return datetime.timedelta(weeks=i)
 
@@ -174,7 +177,12 @@ class TaskTree:
 
         return d[t_id]["tree"]
 
+def migrate1(s):
+    for task in s.find({}):
+        print('migrate', task['_id'])
+        #due_new = [{"value":task["due"]}]
         
+        #s.db.tasks.update_one({"_id":task["_id"]}, {"$set": {"due": due_new}})
 
 class Session:
     """
@@ -186,6 +194,15 @@ class Session:
     * status - integer
 
     """
+
+    fields = [
+            'title',
+            'creator',
+            'dt_create',
+            'due',
+            'status',
+            'parent']
+
     def __init__(self, username):
         if 'MONGO_URI' in os.environ:
             client = pymongo.MongoClient(os.environ['MONGO_URI'])
@@ -214,14 +231,16 @@ class Session:
         if parent_id is not None:
             parent_id = bson.objectid.ObjectId(parent_id)
 
+        print("Create task")
         print(due)
         print(due_utc)
 
         t = {
                 'title': title,
                 'creator': self.user['_id'],
-                'due': due_utc,
-                'status': Status.NONE.value,
+                'dt_create': utcnow(),
+                'due': [{"value": due_utc},],
+                'status': [{"value": Status.NONE.value},],
                 'parent': parent_id,
                 }
     
@@ -257,7 +276,8 @@ class Session:
         update the status of all tasks whose title matches the regex
         """
         assert isinstance(status, Status)
-        self.db.tasks.update_many(filt, {'$set': {'status': status.value}})
+        elem = {"value": status.value, "dt": utcnow()}
+        self.db.tasks.update_many(filt, {'$push': {'status': elem})
 
     def updateTitle(self, filt, title):
         """
@@ -277,7 +297,8 @@ class Session:
  
     def updateDue(self, filt, due):
         due = due.astimezone(pytz.utc) if due is not None else None
-        self.db.tasks.update_many(filt, {'$set': {'due': due}})
+        elem = {"value": due, "dt": utcnow()}
+        self.db.tasks.update_many(filt, {'$push': {'due': elem})
  
     def show(self, filt):
         
