@@ -1,4 +1,5 @@
 __version__ = '0.1'
+import functools
 import collections
 import os
 import time
@@ -19,13 +20,19 @@ tz = pytz.timezone('US/Pacific')
 def datetimeToString(d):
     if d is None: return "None"
     try:
-        d = d.astimezone(pytz.utc)
+        d = d.astimezone(tz)
     except:
         pytz.utc.localize(d)
-    return d.strftime("%Y-%m-%d %H:%MZ")
+        d = d.astimezone(tz)
+    return d.strftime("%Y-%m-%d %H:%M")
 
 def stringToDatetime(s):
     if s:
+        try:
+            naive = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M")
+            return tz.localize(naive).astimezone(pytz.utc)
+        except: pass
+            
         naive = datetime.datetime.strptime(s, "%Y-%m-%d %H:%MZ")
         return pytz.utc.localize(naive)
     else:
@@ -118,34 +125,28 @@ def stringize_field(task, name):
         task[name] = str(task[name])
 
 def safeTask(task):
-
-    task = dict(task)
-
+    
     print(task)
-    
-    stringize_field(task, '_id')
-    stringize_field(task, 'creator')
-    
-    task["parent"] = str(task.get("parent", None)) 
-
+ 
     def func_due_elem(elem):
         elem['value'] = datetimeToString(elem["value"])
 
     def func_status_elem(elem):
         elem["value"] = Status(elem["value"]).name
-
-    task["due"] = [func_due_elem(elem) for elem in task["due"]]
-
-    task["status"] = [func_status_elem(elem) for elem in task["status"]]
- 
-    task["due_last"] = datetimeToString(task["due_last"])
-
-    task["status_last"] = Status(task["status_last"]).name
    
-    print(task)
-
-    return task
-
+    return {
+            "_id": str(task["_id"]),
+            "title": task["title"],
+            "creator": str(task["creator"]),
+            "dt_create": datetimeToString(task.get("dt_create", None)),
+            "parent": str(task.get("parent", None)),
+            "due": [func_due_elem(elem) for elem in task["due"]],
+            "status": [func_status_elem(elem) for elem in task["status"]],
+            "due_last": datetimeToString(task["due_last"]),
+            "status_last": Status(task["status_last"]).name,
+            "due2": datetimeToString(task.due2()),
+            }
+ 
 def safeBranch(branch):
     return {"task": safeTask(branch["task"]), "tree": safeDict(branch["tree"])}
 
@@ -157,16 +158,32 @@ class TaskTree:
         self.session = session
         self.tree = collections.OrderedDict()
         
-        tasks = list(tasks)
+        self.flat = tasks
         
-        self.flat = dict((t["_id"], t) for t in tasks)
-        
-        for t in tasks:
+        for t_id, t in tasks.items():
             self.get(t['_id'])
-    
+            
+            assert isinstance(t, _Task)
+
+            print("due_last: {:24} due2: {:24}".format(str(t["due_last"]), str(t.due2())))
+
+        def func(tree):
+            return collections.OrderedDict(sorted(tree.items(), key=lambda elem: elem[1]["task"]))
+        
+        self.iter(func)
+
+    def _iter(self, tree, func):
+        for t_id, branch in tree.items():
+            branch["tree"] = self._iter(branch["tree"], func)
+
+        return func(tree)
+
+    def iter(self, func):
+        self.tree = self._iter(self.tree, func)
+
     def get_task(self, task_id):
-        if task_id in self.flat:
-            return self.flat[task_id]
+        #if task_id in self.flat:
+        return self.flat[task_id]
 
         task = self.session.db.tasks.find_one({'_id': task_id})
         task['due_last'] = task['due'][-1]['value']
@@ -194,6 +211,22 @@ class TaskTree:
 
         return d[t_id]["tree"]
 
+    def task_due2(self, task):
+        due = task["due_last"]
+    
+        if due is not None: return due
+    
+        children = task.get("children", [])
+        
+        if not children: return due
+        
+        l2 = [self.get_task(child_id) for child_id in children]
+        l3 = [task['due_last'] for task in l2 if task['due_last'] is not None]
+
+        if not l3: return due
+
+        return min(l3)#, key=lambda task: task['due_last'])
+ 
 def migrate1(s):
     for task in s.find({}):
         print('migrate', task['_id'])
@@ -276,7 +309,7 @@ class Session:
     
     def agg_sort_due(self):
         yield {"$sort": {"due_last": 1}}
-    
+
     def agg_default(self):
         yield from self.agg_status_last()
         yield from self.agg_due_last(['status_last'])
@@ -284,14 +317,39 @@ class Session:
         yield from self.agg_sort_due()
 
     def task_view_default(self):
-        return self.aggregate(list(self.agg_default()))
+
+        vc = self.view_children()
+        
+        c = self.aggregate(list(self.agg_default()))
+        
+        tasks = dict((t["_id"], _Task(t)) for t in c)
+        
+        for elem in vc:
+            print('elem:',elem)
+            if elem["_id"] not in tasks.keys():
+                task = self.session.db.tasks.find_one({'_id': elem["_id"]})
+                task['due_last'] = task['due'][-1]['value']
+                task['status_last'] = task['status'][-1]['value']
+                tasks[elem["_id"]] = task
+
+            tasks[elem["_id"]]["children"] = elem["children"]
+       
+        return tasks
+
+    def view_children(self):
+        def _stages():
+            yield from self.agg_status_last()
+            yield from self.agg_status_last_none()
+            yield from self.agg_due_last(['status_last'])
+            yield {"$match": {"parent": {"$ne": None}}}
+            yield {"$group": {"_id": "$parent", "children": {"$push": {"id": "$_id", "due_last": "$due_last"}}}}
+
+        return self.aggregate(list(_stages()))
 
     def aggregate(self, stages):
-        return self.db.tasks.aggregate(stages)
+        for task in self.db.tasks.aggregate(stages):
+            yield task
 
-    #def filter_open(self):
-    #    return {'status': {'$eq': Status.NONE.value}}
-   
     def filter_title_1(self, s):
         return fand([
             self.filter_title(s),
@@ -395,15 +453,44 @@ def fand(f):
     assert isinstance(f, list)
     return {'$and': f}
 
-class _Task:
-    
+class _Task:    
     column_width = {'title': 48}
-
+    
     def __init__(self, d):
         self.d = d
+    
+    def __getitem__(self, key):
+        return self.d[key]
+    
+    def __setitem__(self, key, value):
+        self.d[key] = value
+    
+    def get(self, key, default):
+        return self.d.get(key, default)
+
+    def __lt__(self, other):
+        if other.due2() is None: return True
+        if self.due2() is None: return False
+        return self.due2() < other.due2()
+    
+    def due2(self):
+        due = self.d["due_last"]
+    
+        if due is not None: return due
+    
+        children = self.d.get("children", [])
+        
+        if not children: return due
+        
+        l3 = [elem['due_last'] for elem in children if elem['due_last'] is not None]
+
+        if not l3: return due
+
+        return min(l3) #, key=lambda task: task['due_last'])
 
     def due_str(self):
         due = self.d['due_last']
+        due = self.due2()
         #due_str = '{:26s}'.format(datetimeToString(due))
         
         if due:

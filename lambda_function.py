@@ -26,9 +26,9 @@ def taskCreate(session, body):
 
 def taskUpdateDue(session, body):
     task_id = body["task_id"]
-    due = todo.stringToDatetime(body["due_str"])
+    due = todo.stringToDatetime(body["due"])
     session.updateDue(session.filter_id(task_id), due)
-    return "success"
+    return "update due success"
 
 def taskUpdateStatus(session, body):
     task_id = body["task_id"]
@@ -62,6 +62,7 @@ functions = {
         "create": taskCreate,
         "update_status": taskUpdateStatus,
         "update_title": taskUpdateTitle,
+        "update_due": taskUpdateDue,
         "update_parent": taskUpdateParent,
         }
 

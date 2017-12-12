@@ -174,8 +174,8 @@ var myApp = window.myApp || {};
 			var div_due = $("<div class=\"col-3 task_due\">");
 			var div_status = $("<div class=\"col-3\">");
 
-			if(task['due_last']){
-				div_due.html(task['due_last']);
+			if(task['due2']){
+				div_due.html(task['due2']);
 			}else{
 				div_due.html('none');
 			}
@@ -183,9 +183,9 @@ var myApp = window.myApp || {};
 			//var div_status = $("<div class=\"\">");
 			div_status.html(task["status_last"]);
 
-			var div_title = $("<div class=\"col\">");
+			var div_title = $("<div class=\"col title\">");
 
-			var span_title = $("<span></span>");
+			var span_title = $("<p></p>");
 			span_title.css("padding-left", 40 * level);
 			span_title.html(task['title']);
 			span_title.click(function(){
@@ -229,10 +229,11 @@ var myApp = window.myApp || {};
 	}
 	function loadTaskDetail(task) {
 
-		console.log("loadTaskEdit");
-		console.log(myApp);
-
 		myApp.taskCurrent = task;
+
+		console.log("loadTaskEdit");
+		console.log(task);
+
 
 		$("#divTasks").hide();
 		$("#divTaskCreate").hide();
@@ -256,13 +257,12 @@ var myApp = window.myApp || {};
 			}
 
 			var s = "<option value=\""+ task1["_id"] +"\" " + selected + ">" + task1["title"] + "</option>";
-			console.log("append: " + s);
 			inputParent.append($(s));
 		});
 
 	
 		$("#divTaskDetail #title").val(task["title"]);
-		$("#divTaskDetail #due").html(task["due"]);
+		$("#divTaskDetail #due").val(task["due_last"]);
 		/*$("#divTaskDetail #parent").html(task["parent"]);*/
 		$("#divTaskDetail #status").html(task["status"]);
 	}
@@ -312,6 +312,7 @@ var myApp = window.myApp || {};
 		task = myApp.taskCurrent;
 
 		title = $("#divTaskDetail #title").val();
+		due = $("#divTaskDetail #due").val();
 		parent_id = $("#divTaskDetail #parent").val();
 
 		commands = [];
@@ -326,7 +327,14 @@ var myApp = window.myApp || {};
 				"title": title
 			});
 		}
-
+		if(due != task["due_last"])
+		{
+			commands.push({
+				"command": "update_due",
+				"task_id": task["_id"],
+				"due": due
+			});
+		}
 		if(parent_id != task["parent"])
 		{
 			console.log("parent changed");
