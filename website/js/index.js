@@ -8,7 +8,7 @@ var myApp = window.myApp || {};
 
 	myApp.authToken.then(function setAuthToken(token) {
 		if (token) {
-			authToken = token;
+			myApp.authToken = token;
 		} else {
 			window.location.href = '/signin.html';
 		}
@@ -16,22 +16,6 @@ var myApp = window.myApp || {};
 		alert(error);
 		window.location.href = '/signin.html';
 	});
-
-	function callAPI(data, onSuccess, onFailure) {
-		console.log("callAPI");
-		console.log(data);
-		$.ajax({
-			method: 'POST',
-			url: _config.api.invokeUrl + '/tasks',
-			headers: {
-				Authorization: authToken
-			},
-			data: JSON.stringify(data),
-			contentType: 'application/json',
-			success: onSuccess,
-			error: onFailure
-		});
-	}
 
 	function taskCreate(title, due, parent_id) {
 		callAPI(
@@ -113,37 +97,6 @@ var myApp = window.myApp || {};
 		}
 		return null;
 	}
-	function treeGetSubtree(tree, task_id)
-	{
-		console.log("treeGetSubtree");
-
-		for(var task_id1 in tree)
-		{
-			if(tree.hasOwnProperty(task_id1))
-			{
-				var subtree = tree[task_id1]["tree"];
-
-				console.log(task_id1 + " == " + task_id);
-				if(task_id1 == task_id) {
-					console.log("return:");
-					console.log(subtree);
-					console.log(subtree == null);
-					return subtree;
-				}
-				
-				subtree = treeGetSubtree(subtree, task_id);
-
-				if(subtree == null) {
-					console.log("recursive returned null");
-				} else {
-					console.log("return from recursive:");
-					console.log(subtree);
-					return subtree;
-				}
-			}
-		}
-		return null;
-	}
 
 	function loadTaskList(tree)
 	{
@@ -159,14 +112,18 @@ var myApp = window.myApp || {};
 		// clear select element
 		$("#formCreateInputParent option").remove();
 
-		var inputParent = $("#formCreateInputParent");
-
-		inputParent.append($("<option value=\"\">None</option>"));
+		resetParentSelect($("#formCreateInputParent"), null);
 
 		treeIter(tree, 0, function(task, level) {
 			
 			if(task["status_last"] != "NONE"){
 				//return;
+			}
+
+			if(task["isContainer"]) {
+				if(task["children"].length == 0) {
+					return;
+				}
 			}
 
 			var div = $("<div class=\"row task_row\">");
@@ -199,10 +156,29 @@ var myApp = window.myApp || {};
 			div.append(div_title);
 
 			$('#divTasks').append(div);
-
-			// add option
-			inputParent.append($("<option value=\""+ task["_id"] +"\">"+task["title"]+"</option>"));
 		});
+	}
+	function defaultAjaxError(jqXHR, textStatus, errorThrown) {
+		console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
+		console.error('Response: ', jqXHR.responseText);
+		alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
+	}
+	function taskDeleteCurrent() {
+		taskDelete(myApp.taskCurrent);
+	}
+	function taskDelete(task) {
+		if(!confirm("Permanently delete task?")) return;
+
+		callAPI(
+			[{
+				"command": "delete",
+				"task_id": task["_id"]
+			}],
+			function(response) {
+				console.log("response:", response);
+				tasksList();
+			},
+			defaultAjaxError);
 	}
 	function taskUpdateStatusCurrent(status_string) {
 		taskUpdateStatus(myApp.taskCurrent, status_string);
@@ -227,13 +203,31 @@ var myApp = window.myApp || {};
 				alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
 			});
 	}
+	function resetParentSelect(tag, selected_task_id)
+	{
+		tag.children().remove();
+		
+		tag.append($("<option value=\"None\">None</option>"));
+		
+		treeIter(myApp.tasks, 0, function(task, level) {
+			var selected = "";
+			if(task["_id"] == selected_task_id)
+			{
+				selected = "selected=\"selected\"";
+			}
+			
+			var op = $("<option value=\""+ task["_id"] +"\" " + selected + ">");
+			op.html('-'.repeat(level) + task["title"])
+
+			tag.append(op);
+		});
+	}
 	function loadTaskDetail(task) {
 
 		myApp.taskCurrent = task;
 
 		console.log("loadTaskEdit");
 		console.log(task);
-
 
 		$("#divTasks").hide();
 		$("#divTaskCreate").hide();
@@ -245,26 +239,12 @@ var myApp = window.myApp || {};
 		});
 		
 		/* update parent select tag */
-		$("#divTaskDetail #parent option").remove();
-		var inputParent = $("#divTaskDetail #parent");
-		inputParent.append($("<option value=\"None\">None</option>"));
-		
-		treeIter(myApp.tasks, 0, function(task1, level) {
-
-			var selected = "";
-			if(task["parent"] == task1["_id"]){
-				selected = "selected=\"selected\"";
-			}
-
-			var s = "<option value=\""+ task1["_id"] +"\" " + selected + ">" + task1["title"] + "</option>";
-			inputParent.append($(s));
-		});
-
+		resetParentSelect($("#divTaskDetail #parent"), task["parent"]);
 	
 		$("#divTaskDetail #title").val(task["title"]);
 		$("#divTaskDetail #due").val(task["due_last"]);
-		/*$("#divTaskDetail #parent").html(task["parent"]);*/
 		$("#divTaskDetail #status").html(task["status"]);
+		$("#divTaskDetail #isContainer").prop("checked", task["isContainer"]);
 	}
 	function handleFormCreate(event) {
 		var title = $('#formCreateInputTitle').val();
@@ -292,21 +272,10 @@ var myApp = window.myApp || {};
 
 		taskCreate(title, due, parent_id);
 	}
-	function moveTask(task_id, subtree1, subtree2)
+	function handleFormTaskEdit_0(event)
 	{
-		subtree2[task_id] = subtree1[task_id];
-		delete subtree1[task_id];
-	}
-	function getSubtreeOrRoot(task_id)
-	{
-		if(task_id == "None") {
-			return myApp.tasks;
-		} else {
-			return treeGetSubtree(myApp.tasks, task_id);
-		}
-	}
-	function handleFormTaskEdit(event)
-	{
+		console.log("handle task edit");
+
 		event.preventDefault();
 
 		task = myApp.taskCurrent;
@@ -314,9 +283,20 @@ var myApp = window.myApp || {};
 		title = $("#divTaskDetail #title").val();
 		due = $("#divTaskDetail #due").val();
 		parent_id = $("#divTaskDetail #parent").val();
+		var isContainer = $("#divTaskDetail #isContainer").prop("checked");
 
 		commands = [];
 
+		if(isContainer != task["isContainer"])
+		{
+			task["isContainer"] = isContainer;
+
+			commands.push({
+				"command": "update_is_container",
+				"task_id": task["_id"],
+				"isContainer": isContainer
+			});
+		}
 		if(title != task["title"])
 		{
 			task["title"] = title;
@@ -385,6 +365,9 @@ var myApp = window.myApp || {};
 		});
 		$("#divTaskDetail #complete").click(function(){
 			taskUpdateStatusCurrent("COMPLETE");
+		});
+		$("#divTaskDetail #delete").click(function(){
+			taskDeleteCurrent();
 		});
 
 	});

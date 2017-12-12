@@ -36,11 +36,21 @@ def taskUpdateStatus(session, body):
     session.updateStatus(session.filter_id(task_id), status)
     return "success"
 
+def taskDelete(session, body):
+    task_id = body["task_id"]
+    session.task_delete(task_id)
+    return "success"
+
 def taskUpdateTitle(session, body):
     task_id = body["task_id"]
     title = body["title"]
     session.updateTitle(session.filter_id(task_id), title)
     return "success"
+
+def taskUpdateIsContainer(session, body):
+    task_id = body["task_id"]
+    session.updateIsContainer(session.filter_id(task_id), body["isContainer"])
+    return "update isContainer success"
 
 def taskUpdateParent(session, body):
     task_id = body["task_id"]
@@ -64,6 +74,8 @@ functions = {
         "update_title": taskUpdateTitle,
         "update_due": taskUpdateDue,
         "update_parent": taskUpdateParent,
+        "update_is_container": taskUpdateIsContainer,
+        "delete": taskDelete,
         }
 
 def processBody(event, session, body):

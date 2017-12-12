@@ -22,7 +22,7 @@ def datetimeToString(d):
     try:
         d = d.astimezone(tz)
     except:
-        pytz.utc.localize(d)
+        d = pytz.utc.localize(d)
         d = d.astimezone(tz)
     return d.strftime("%Y-%m-%d %H:%M")
 
@@ -124,6 +124,14 @@ def stringize_field(task, name):
     if task.get(name, None) is not None:
         task[name] = str(task[name])
 
+def SafeChild(task):
+    print("SafeChild")
+    print(task)
+    return {
+        "id": str(task["id"]),
+        "due_last": datetimeToString(task["due_last"])
+        }
+
 def safeTask(task):
     
     print(task)
@@ -136,15 +144,18 @@ def safeTask(task):
    
     return {
             "_id": str(task["_id"]),
-            "title": task["title"],
             "creator": str(task["creator"]),
             "dt_create": datetimeToString(task.get("dt_create", None)),
+            "title": task["title"],
+            "tags": task.get("tags", []),
+            "isContainer": task.get("isContainer", False),
             "parent": str(task.get("parent", None)),
             "due": [func_due_elem(elem) for elem in task["due"]],
             "status": [func_status_elem(elem) for elem in task["status"]],
             "due_last": datetimeToString(task["due_last"]),
             "status_last": Status(task["status_last"]).name,
             "due2": datetimeToString(task.due2()),
+            "children": [SafeChild(child) for child in task.get("children", [])]
             }
  
 def safeBranch(branch):
@@ -251,7 +262,8 @@ class Session:
             'dt_create',
             'due',
             'status',
-            'parent']
+            'parent',
+            'isContainer']
 
     def __init__(self, username):
         if 'MONGO_URI' in os.environ:
@@ -336,6 +348,9 @@ class Session:
        
         return tasks
 
+    def task_delete(self, task_id):
+        self.db.tasks.delete_one(self.filter_id(task_id))
+
     def view_children(self):
         def _stages():
             yield from self.agg_status_last()
@@ -382,10 +397,10 @@ class Session:
         self.db.tasks.update_many(filt, {'$push': {'status': elem}})
 
     def updateTitle(self, filt, title):
-        """
-        update the status of all tasks whose title matches the regex
-        """
         self.db.tasks.update_many(filt, {'$set': {'title': title}})
+
+    def updateIsContainer(self, filt, val):
+        self.db.tasks.update_many(filt, {'$set': {'isContainer': val}})
 
     def updateParent(self, filt, parent_id_str):
         if not parent_id_str:
