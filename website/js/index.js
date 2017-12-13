@@ -158,11 +158,6 @@ var myApp = window.myApp || {};
 			$('#divTasks').append(div);
 		});
 	}
-	function defaultAjaxError(jqXHR, textStatus, errorThrown) {
-		console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
-		console.error('Response: ', jqXHR.responseText);
-		alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
-	}
 	function taskDeleteCurrent() {
 		taskDelete(myApp.taskCurrent);
 	}
@@ -222,6 +217,16 @@ var myApp = window.myApp || {};
 			tag.append(op);
 		});
 	}
+	function loadPosts(task) {
+		var div = $("div#posts");
+		div.children().remove();
+
+		task["posts"].forEach(function(post) {
+			var div_post = $("<div>");
+			div_post.html(post["user_username"] + "(" + post["datetime"] + "):" + post["text"]);
+			div.append(div_post);
+		});
+	}
 	function loadTaskDetail(task) {
 
 		myApp.taskCurrent = task;
@@ -241,6 +246,8 @@ var myApp = window.myApp || {};
 		/* update parent select tag */
 		resetParentSelect($("#divTaskDetail #parent"), task["parent"]);
 	
+		loadPosts(task);
+
 		$("#divTaskDetail #title").val(task["title"]);
 		$("#divTaskDetail #due").val(task["due_last"]);
 		$("#divTaskDetail #status").html(task["status"]);
@@ -359,6 +366,9 @@ var myApp = window.myApp || {};
 		tasksList();
 		$('#formCreate').submit(handleFormCreate);
 		$('#formTaskEdit').submit(handleFormTaskEdit);
+		
+		$("#form_post form").submit(handleFormPost);
+
 		$('#divTaskEditTaskCreate form').submit(function(event) {
 			event.preventDefault();
 			handleFormTaskEditTaskCreate(event)

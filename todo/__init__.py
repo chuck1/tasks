@@ -132,6 +132,15 @@ def SafeChild(task):
         "due_last": datetimeToString(task["due_last"])
         }
 
+def SafePost(session, post):
+    user = session.db.users.find_one(session.filter_id(post["user_id"]))
+    return {
+            "user_id": str(post["user_id"]),
+            "user_username": user["username"],
+            "datetime": datetimeToString(post["datetime"]),
+            "text": post["text"]
+            }
+
 def safeTask(task):
     
     print(task)
@@ -155,7 +164,8 @@ def safeTask(task):
             "due_last": datetimeToString(task["due_last"]),
             "status_last": Status(task["status_last"]).name,
             "due2": datetimeToString(task.due2()),
-            "children": [SafeChild(child) for child in task.get("children", [])]
+            "children": [SafeChild(child) for child in task.get("children", [])],
+            "posts": list(task.posts()),
             }
  
 def safeBranch(branch):
@@ -263,7 +273,9 @@ class Session:
             'due',
             'status',
             'parent',
-            'isContainer']
+            'isContainer',
+            "posts",
+            ]
 
     def __init__(self, username):
         if 'MONGO_URI' in os.environ:
@@ -334,7 +346,7 @@ class Session:
         
         c = self.aggregate(list(self.agg_default()))
         
-        tasks = dict((t["_id"], _Task(t)) for t in c)
+        tasks = dict((t["_id"], _Task(self, t)) for t in c)
         
         for elem in vc:
             print('elem:',elem)
@@ -350,6 +362,15 @@ class Session:
 
     def task_delete(self, task_id):
         self.db.tasks.delete_one(self.filter_id(task_id))
+
+    def taskPushPost(self, task_id, text):
+        elem = {
+                "user_id": self.user["_id"],
+                "datetime": utcnow(),
+                "text": text,
+                }
+
+        self.db.tasks.update_one(self.filter_id(task_id), {"$push": {"posts": elem}})
 
     def view_children(self):
         def _stages():
@@ -423,7 +444,7 @@ class Session:
 
         for t in self.find(filt):
 
-            t = _Task(t)
+            t = _Task(self, t)
             id_str = str(t.d['_id']) + ' '
             str_title = crayons.white("{:48} ".format(t.d['title'][:48]), bold=True)
             str_tags = "{:32}".format(str(', '.join(t.d.get('tags',[])))[:32])
@@ -451,7 +472,7 @@ class Session:
         for t in tasks:
             assert t is not None
 
-            t = _Task(t)
+            t = _Task(self, t)
 
             id_str = str(t.d['_id']) + ' '
             str_title = crayons.white("{:48} ".format(t.d['title'][:48]), bold=True)
@@ -471,7 +492,8 @@ def fand(f):
 class _Task:    
     column_width = {'title': 48}
     
-    def __init__(self, d):
+    def __init__(self, session, d):
+        self.session = session
         self.d = d
     
     def __getitem__(self, key):
@@ -487,7 +509,11 @@ class _Task:
         if other.due2() is None: return True
         if self.due2() is None: return False
         return self.due2() < other.due2()
-    
+
+    def posts(self):
+        for post in self.d.get("posts", []):
+            yield SafePost(self.session, post)
+        
     def due2(self):
         due = self.d["due_last"]
     

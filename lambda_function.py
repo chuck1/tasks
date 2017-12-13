@@ -58,6 +58,10 @@ def taskUpdateParent(session, body):
     session.updateParent(session.filter_id(task_id), parent_id_str)
     return "success"
 
+def taskPushPost(session, body):
+    session.taskPushPost(body["task_id"], body["text"])
+    return "push post success"
+
 def errorResponse(responseBody):
     return {
         "statusCode": 400,
@@ -76,6 +80,7 @@ functions = {
         "update_parent": taskUpdateParent,
         "update_is_container": taskUpdateIsContainer,
         "delete": taskDelete,
+        "post": taskPushPost,
         }
 
 def processBody(event, session, body):

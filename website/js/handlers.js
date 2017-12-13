@@ -1,6 +1,12 @@
 
 var myApp = window.myApp || {};
 
+function defaultAjaxError(jqXHR, textStatus, errorThrown) {
+	console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
+	console.error('Response: ', jqXHR.responseText);
+	alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
+}
+
 function callAPI(data, onSuccess, onFailure) {
 	console.log("callAPI");
 	console.log(data);
@@ -144,6 +150,31 @@ function handleFormTaskEdit(event)
 				alert('An error occured:\n' + jqXHR.responseText);
 			});
 	}
+
 }
+function handleFormPost()
+{
+	console.log("handle form post");
+	event.preventDefault();
+	
+	var task_id = myApp.taskCurrent["_id"];
+	var text = $("#form_post textarea#text").val();
+	
+	console.log(task_id);
+	console.log(text);
+
+	callAPI(
+		[{
+			"command": "post",
+			"task_id": task_id,
+			"text": text
+		}],
+		function(response) {
+			console.log("response:", response);
+		},
+		defaultAjaxError);
+}
+
+
 
 

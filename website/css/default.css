@@ -11,6 +11,10 @@ div.col.title p {
 	margin: 0;
 }
 
+textarea {
+	width: 500px;
+}
+
 @media screen and (min-width: 480px) 
 {
 	div.task_row div
