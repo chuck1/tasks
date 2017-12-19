@@ -13,7 +13,10 @@ def taskCreate(session, body):
     due = todo.stringToDatetime(body["due"])
     
     if body["parent_id"]:
-        parent_id = body["parent_id"]
+        if body["parent_id"] == "None":
+            parent_id = None
+        else:
+            parent_id = body["parent_id"]
     else:
         parent_id = None
 
