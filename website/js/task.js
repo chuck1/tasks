@@ -13,6 +13,18 @@ class Task {
 
 		this.children = children;
 	}
+	should_display()
+	{	
+		var num_children_display = Object.values(this.children).filter(task => task.should_display()).length;
+
+		if(num_children_display > 0) return true;
+		
+		if(this.task["status_last"] != "NONE") return false;
+		
+		if(this.task["isContainer"]) return false;
+
+		return true;
+	}
 	due()
 	{
 		//console.log(task);

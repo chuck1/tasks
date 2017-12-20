@@ -103,15 +103,7 @@ var myApp = window.myApp || {};
 	}
 	function add_task_to_list(task, level)
 	{
-		if(task.task["status_last"] != "NONE") {
-			//return;
-		}
-
-		if(task.task["isContainer"]) {
-			if(task["children"].length == 0) {
-				return;
-			}
-		}
+		if(!task.should_display()) return;
 
 		var div = $("<div class=\"row task_row\">");
 
