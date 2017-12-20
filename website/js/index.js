@@ -16,60 +16,6 @@ var myApp = window.myApp || {};
 		alert(error);
 		window.location.href = '/signin.html';
 	});
-	function argmin(arr)
-	{
-		var i = -1;
-		var m = null;
-
-		for (j = 0; j < arr.length; j++) { 
-			if(arr[j] == null) continue;
-
-			if(m == null) {
-				i = j;
-				m = arr[j];
-				continue;
-			}
-
-			if(arr[j] < m) {
-				i = j;
-				m = arr[j];
-			}
-		}
-		return i;
-	}
-	function date_or_null(d) {
-		if(d == null) return d;
-		return new Date(d);
-	}
-	function due2(task)
-	{
-		//console.log(task);
-		//console.log(child_branches);
-
-		var children_due = Object.values(task['children']).map(child => due2(child));
-		
-		var children_due2 = children_due.map(function (d) {
-			if(d == null) return null;
-			return new Date(d);
-		});
-		
-		//console.log(children_due2);
-
-		var i = argmin(children_due2);
-
-		//if(task["due_last"] != "None") return task["due_last"];
-
-		if(i == -1) return date_or_null(task["due_last"]);
-
-		if(task["due_last"] == null) return children_due2[i];
-		
-		var d = Date(task["due_last"])
-		if(d < children_due2[i]) {
-			return d;
-		} else {
-			return children_due[i];
-		}
-	}
 	function process_received_tasks(tasks)
 	{
 		myApp.tasks = {};
@@ -119,7 +65,7 @@ var myApp = window.myApp || {};
 
 				var tasks = result[0];
 				process_received_tasks(tasks);
-				loadTaskList(tasks);
+				loadTaskList(myApp.tasks);
 			},
 			function ajaxError(jqXHR, textStatus, errorThrown) {
 				console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -157,11 +103,11 @@ var myApp = window.myApp || {};
 	}
 	function add_task_to_list(task, level)
 	{
-		if(task["status_last"] != "NONE") {
+		if(task.task["status_last"] != "NONE") {
 			//return;
 		}
 
-		if(task["isContainer"]) {
+		if(task.task["isContainer"]) {
 			if(task["children"].length == 0) {
 				return;
 			}
@@ -172,7 +118,7 @@ var myApp = window.myApp || {};
 		var div_due = $("<div class=\"col-3 task_due\">");
 		var div_status = $("<div class=\"col-3\">");
 
-		div_due.html(format_date(due2(task)));
+		div_due.html(format_date(task.due()));
 
 		//var div_status = $("<div class=\"\">");
 		div_status.html(task.task["status_last"]);
@@ -228,8 +174,8 @@ var myApp = window.myApp || {};
 		var arr = Object.values(tasks);
 
 		arr.sort(function(a, b) {
-			d1 = due2(a);
-			d2 = due2(b);
+			d1 = a.due();
+			d2 = b.due();
 			if(d1 == null) return 1;
 			if(d2 == null) return -1;
 			if(d1 < d2) return -1;
@@ -245,8 +191,6 @@ var myApp = window.myApp || {};
 	}
 	function loadTaskList(tree)
 	{
-		console.log(tree);
-
 		$("#divTasks").show();
 		$("#divTaskCreate").show();
 		$("#divTaskDetail").hide();
@@ -270,7 +214,7 @@ var myApp = window.myApp || {};
 		callAPI(
 			[{
 				"command": "delete",
-				"task_id": task["_id"]
+				"task_id": task.task["_id"]
 			}],
 			function(response) {
 				console.log("response:", response);
@@ -287,7 +231,7 @@ var myApp = window.myApp || {};
 		callAPI(
 			[{
 				"command": "update_status",
-				"task_id": task["_id"],
+				"task_id": task.task["_id"],
 				"status": status_string
 			}],
 			function(result) {
@@ -325,7 +269,7 @@ var myApp = window.myApp || {};
 		var div = $("div#posts");
 		div.children().remove();
 
-		task["posts"].forEach(function(post) {
+		task.task["posts"].forEach(function(post) {
 			var div_post = $("<div>");
 			div_post.html(post["user_username"] + "(" + post["datetime"] + "):" + post["text"]);
 			div.append(div_post);
@@ -334,9 +278,6 @@ var myApp = window.myApp || {};
 	function loadTaskDetail(task)
 	{
 		myApp.taskCurrent = task;
-
-		console.log("loadTaskEdit");
-		console.log(task);
 
 		$("#divTasks").hide();
 		$("#divTaskCreate").hide();
@@ -348,14 +289,14 @@ var myApp = window.myApp || {};
 		});
 
 		/* update parent select tag */
-		resetParentSelect($("#divTaskDetail #parent"), task["parent"]);
+		resetParentSelect($("#divTaskDetail #parent"), task.task["parent"]);
 
 		loadPosts(task);
 
-		$("#divTaskDetail #title").val(task["title"]);
-		$("#divTaskDetail #due").val(task["due_last"]);
-		$("#divTaskDetail #status").html(task["status"]);
-		$("#divTaskDetail #isContainer").prop("checked", task["isContainer"]);
+		$("#divTaskDetail #title").val(task.task["title"]);
+		$("#divTaskDetail #due").val(task.task["due_last"]);
+		$("#divTaskDetail #status").html(task.task["status"]);
+		$("#divTaskDetail #isContainer").prop("checked", task.task["isContainer"]);
 	}
 	function handleFormCreate(event) {
 		var title = $('#formCreateInputTitle').val();
@@ -398,53 +339,53 @@ var myApp = window.myApp || {};
 
 		commands = [];
 
-		if(isContainer != task["isContainer"])
+		if(isContainer != task.task["isContainer"])
 		{
-			task["isContainer"] = isContainer;
+			task.task["isContainer"] = isContainer;
 
 			commands.push({
 				"command": "update_is_container",
-				"task_id": task["_id"],
+				"task_id": task.task["_id"],
 				"isContainer": isContainer
 			});
 		}
-		if(title != task["title"])
+		if(title != task.task["title"])
 		{
-			task["title"] = title;
+			task.task["title"] = title;
 
 			commands.push({
 				"command": "update_title",
-				"task_id": task["_id"],
+				"task_id": task.task["_id"],
 				"title": title
 			});
 		}
-		if(due != task["due_last"])
+		if(due != task.task["due_last"])
 		{
 			commands.push({
 				"command": "update_due",
-				"task_id": task["_id"],
+				"task_id": task.task["_id"],
 				"due": due
 			});
 		}
-		if(parent_id != task["parent"])
+		if(parent_id != task.task["parent"])
 		{
 			console.log("parent changed");
-			console.log(task["parent"]);
+			console.log(task.task["parent"]);
 			console.log(parent_id);
 
-			var tree1 = getSubtreeOrRoot(task["parent"]);
+			var tree1 = getSubtreeOrRoot(task.task["parent"]);
 			var tree2 = getSubtreeOrRoot(parent_id);
 
 			console.log(tree1);
 			console.log(tree2);
 
-			task["parent"] = parent_id;
+			task.task["parent"] = parent_id;
 
-			moveTask(task["_id"], tree1, tree2);
+			moveTask(task.task["_id"], tree1, tree2);
 
 			commands.push({
 				"command": "update_parent",
-				"task_id": task["_id"],
+				"task_id": task.task["_id"],
 				"parent_id_str": parent_id
 			});
 		}

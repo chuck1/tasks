@@ -13,5 +13,36 @@ class Task {
 
 		this.children = children;
 	}
+	due()
+	{
+		//console.log(task);
+		//console.log(child_branches);
+
+		var children_due = Object.values(this.children).map(child => child.due());
+		
+		var children_due2 = children_due.map(function (d) {
+			if(d == null) return null;
+			return new Date(d);
+		});
+		
+		//console.log(children_due2);
+
+		var i = argmin(children_due2);
+
+		//if(task["due_last"] != "None") return task["due_last"];
+
+		if(i == -1) return date_or_null(this.task["due_last"]);
+
+		if(this.task["due_last"] == null) return children_due2[i];
+		
+		var d = Date(this.task["due_last"])
+
+		if(d < children_due2[i]) {
+			return d;
+		}
+		
+		return children_due[i];
+	}
+
 }
 
