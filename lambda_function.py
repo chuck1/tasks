@@ -13,7 +13,9 @@ def taskCreate(session, body):
 
     due = todo.stringToDatetime(body["due"])
     
-    if body["parent_id"]:
+    p = body["parent_id"]
+
+    if p:
         if body["parent_id"] == "None":
             parent_id = None
         else:
@@ -66,13 +68,13 @@ def taskPushPost(session, body):
     session.taskPushPost(body["task_id"], body["text"])
     return "push post success"
 
-def errorResponse(responseBody):
+def errorResponse(err, responseBody):
     return {
         "statusCode": 400,
         "headers": {
             "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(responseBody),
+        "body": json.dumps(traceback.format_exc()),
         "isBase64Encoded": False}
 
 functions = {
@@ -94,8 +96,7 @@ def processBody(event, session, body):
         f = functions[command]
         return f(session, body)
     except Exception as e:
-        traceback.print_exc()
-        return repr(e)
+        return traceback.format_exc()
 
 def lambda_handler(event, context):
     
@@ -118,7 +119,7 @@ def lambda_handler(event, context):
 
     except Exception as e:
         traceback.print_exc()
-        return errorResponse(repr(e) + " event: " + str(event))
+        return errorResponse(e, repr(e) + " event: " + str(event))
     
 def print_dict(d, level):
     for id_, t in d.items():

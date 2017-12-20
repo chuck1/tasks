@@ -14,9 +14,7 @@ def touch(fname, mode=0o666, dir_fd=None, **kwargs):
 
        
 def upload(resource, bucket, filename):
-
     res = resource.Object(bucket, filename).put(Body=open(os.path.join('website', filename), 'rb'), ACL='public-read', ContentType="text/html")
-
 
 if __name__ == '__main__':
 

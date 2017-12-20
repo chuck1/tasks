@@ -311,7 +311,7 @@ var myApp = window.myApp || {};
 	function handleFormTaskEditTaskCreate(event) {
 		var title = $('#divTaskEditTaskCreate #inputTitle').val();
 		var due   = $('#divTaskEditTaskCreate #inputDue').val();
-		var parent_id = myApp.taskCurrent["_id"];
+		var parent_id = myApp.taskCurrent.task["_id"];
 
 		console.log("handle create");
 		console.log(title);
