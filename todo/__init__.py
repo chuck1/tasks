@@ -18,7 +18,7 @@ tz = pytz.timezone('US/Pacific')
 #utc = datetime.timezone.utc
 
 def datetimeToString(d):
-    if d is None: return "None"
+    if d is None: return None
     try:
         d = d.astimezone(tz)
     except:
@@ -163,8 +163,7 @@ def safeTask(task):
             "status": [func_status_elem(elem) for elem in task["status"]],
             "due_last": datetimeToString(task["due_last"]),
             "status_last": Status(task["status_last"]).name,
-            "due2": datetimeToString(task.due2()),
-            "children": [SafeChild(child) for child in task.get("children", [])],
+            "children": dict((str(id_), safeTask(child)) for id_, child in task.get("children", {}).items()),
             "posts": list(task.posts()),
             }
  
@@ -172,7 +171,7 @@ def safeBranch(branch):
     return {"task": safeTask(branch["task"]), "tree": safeDict(branch["tree"])}
 
 def safeDict(subtree):
-    return collections.OrderedDict((str(task_id), safeBranch(branch)) for task_id, branch in subtree.items())
+    return collections.OrderedDict((str(task_id), safeTask(t)) for task_id, t in subtree.items())
 
 class TaskTree:
     def __init__(self, session, tasks):
@@ -184,9 +183,8 @@ class TaskTree:
         for t_id, t in tasks.items():
             self.get(t['_id'])
             
-            assert isinstance(t, _Task)
-
-            print("due_last: {:24} due2: {:24}".format(str(t["due_last"]), str(t.due2())))
+            if not isinstance(t, _Task):
+                raise RuntimeError("t should be _Task, is {}".format(repr(t)))
 
         def func(tree):
             return collections.OrderedDict(sorted(tree.items(), key=lambda elem: elem[1]["task"]))
@@ -232,22 +230,6 @@ class TaskTree:
 
         return d[t_id]["tree"]
 
-    def task_due2(self, task):
-        due = task["due_last"]
-    
-        if due is not None: return due
-    
-        children = task.get("children", [])
-        
-        if not children: return due
-        
-        l2 = [self.get_task(child_id) for child_id in children]
-        l3 = [task['due_last'] for task in l2 if task['due_last'] is not None]
-
-        if not l3: return due
-
-        return min(l3)#, key=lambda task: task['due_last'])
- 
 def migrate1(s):
     for task in s.find({}):
         print('migrate', task['_id'])
@@ -346,19 +328,32 @@ class Session:
         
         c = self.aggregate(list(self.agg_default()))
         
-        tasks = dict((t["_id"], _Task(self, t)) for t in c)
+        flat = dict((t["_id"], _Task(self, t)) for t in c)
         
-        for elem in vc:
-            print('elem:',elem)
-            if elem["_id"] not in tasks.keys():
-                task = self.session.db.tasks.find_one({'_id': elem["_id"]})
-                task['due_last'] = task['due'][-1]['value']
-                task['status_last'] = task['status'][-1]['value']
-                tasks[elem["_id"]] = task
+        def _get_task(id_):
+            if id_ not in flat.keys():
+                task = self.db.tasks.find_one({'_id': elem["_id"]})
+                #task['due_last'] = task['due'][-1]['value']
+                #task['status_last'] = task['status'][-1]['value']
+                    
+                flat[id_] = _Task(self, task)
+            
+            return flat[id_]
 
-            tasks[elem["_id"]]["children"] = elem["children"]
+        for elem in vc:
+            t = _get_task(elem["_id"])
+            
+            print("elem[\"children\"]")
+            print(elem["children"])
+
+            t["children"] = dict((child["id"], _get_task(child["id"])) for child in elem["children"])
        
-        return tasks
+        for t in flat.values():
+            assert isinstance(t, _Task)
+        
+        tasks = flat
+
+        return collections.OrderedDict((id_, t) for id_, t in tasks.items() if t.get("parent", None) is None)
 
     def task_delete(self, task_id):
         self.db.tasks.delete_one(self.filter_id(task_id))
@@ -506,32 +501,16 @@ class _Task:
         return self.d.get(key, default)
 
     def __lt__(self, other):
-        if other.due2() is None: return True
-        if self.due2() is None: return False
-        return self.due2() < other.due2()
+        if other['due_last'] is None: return True
+        if self.d['due_last'] is None: return False
+        return self.d['due_last'] < other['due_last']
 
     def posts(self):
         for post in self.d.get("posts", []):
             yield SafePost(self.session, post)
-        
-    def due2(self):
-        due = self.d["due_last"]
     
-        if due is not None: return due
-    
-        children = self.d.get("children", [])
-        
-        if not children: return due
-        
-        l3 = [elem['due_last'] for elem in children if elem['due_last'] is not None]
-
-        if not l3: return due
-
-        return min(l3) #, key=lambda task: task['due_last'])
-
     def due_str(self):
         due = self.d['due_last']
-        due = self.due2()
         #due_str = '{:26s}'.format(datetimeToString(due))
         
         if due:

@@ -16,7 +16,68 @@ var myApp = window.myApp || {};
 		alert(error);
 		window.location.href = '/signin.html';
 	});
+	function argmin(arr)
+	{
+		var i = -1;
+		var m = null;
 
+		for (j = 0; j < arr.length; j++) { 
+			if(arr[j] == null) continue;
+
+			if(m == null) {
+				i = j;
+				m = arr[j];
+				continue;
+			}
+
+			if(arr[j] < m) {
+				i = j;
+				m = arr[j];
+			}
+		}
+		return i;
+	}
+	function date_or_null(d) {
+		if(d == null) return d;
+		return new Date(d);
+	}
+	function due2(task)
+	{
+		//console.log(task);
+		//console.log(child_branches);
+
+		var children_due = Object.values(task['children']).map(child => due2(child));
+		
+		var children_due2 = children_due.map(function (d) {
+			if(d == null) return null;
+			return new Date(d);
+		});
+		
+		//console.log(children_due2);
+
+		var i = argmin(children_due2);
+
+		//if(task["due_last"] != "None") return task["due_last"];
+
+		if(i == -1) return date_or_null(task["due_last"]);
+
+		if(task["due_last"] == null) return children_due2[i];
+		
+		var d = Date(task["due_last"])
+		if(d < children_due2[i]) {
+			return d;
+		} else {
+			return children_due[i];
+		}
+	}
+	function process_received_tasks(tasks)
+	{
+		myApp.tasks = {};
+
+		Object.values(tasks).forEach(function(task) {
+			myApp.tasks[task["_id"]] = new Task(task);
+		});
+	}
 	function taskCreate(title, due, parent_id) {
 		callAPI(
 			[{
@@ -36,8 +97,8 @@ var myApp = window.myApp || {};
 				$('#formCreateInputParent').val("None");
 
 				var tasks = result[0];
-				myApp.tasks = tasks;
-				loadTaskList(tasks);
+				process_received_tasks(tasks);
+				loadTaskList(myApp.tasks);
 			},
 			function ajaxError(jqXHR, textStatus, errorThrown) {
 				console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -57,7 +118,7 @@ var myApp = window.myApp || {};
 				console.log(result);
 
 				var tasks = result[0];
-				myApp.tasks = tasks;
+				process_received_tasks(tasks);
 				loadTaskList(tasks);
 			},
 			function ajaxError(jqXHR, textStatus, errorThrown) {
@@ -69,16 +130,13 @@ var myApp = window.myApp || {};
 
 	function treeIter(tree, level, func)
 	{
-		for(var task_id in tree)
-		{
-			if(tree.hasOwnProperty(task_id))
-			{
-				var branch = tree[task_id];
-				func(branch["task"], level);
-
-				treeIter(branch["tree"], level + 1, func);
-			}
-		}
+		Object.values(tree).forEach(function(task) {
+			//var branch = tree[task_id];
+			
+			func(task, level);
+			
+			treeIter(task.children, level + 1, func);
+		});
 	}
 	function treeGetBranch(tree, task_id)
 	{
@@ -97,7 +155,94 @@ var myApp = window.myApp || {};
 		}
 		return null;
 	}
+	function add_task_to_list(task, level)
+	{
+		if(task["status_last"] != "NONE") {
+			//return;
+		}
 
+		if(task["isContainer"]) {
+			if(task["children"].length == 0) {
+				return;
+			}
+		}
+
+		var div = $("<div class=\"row task_row\">");
+
+		var div_due = $("<div class=\"col-3 task_due\">");
+		var div_status = $("<div class=\"col-3\">");
+
+		div_due.html(format_date(due2(task)));
+
+		//var div_status = $("<div class=\"\">");
+		div_status.html(task.task["status_last"]);
+
+		var div_title = $("<div class=\"col title\">");
+
+		var span_title = $("<p></p>");
+		span_title.css("padding-left", 40 * level);
+		span_title.html(task.task['title']);
+		span_title.click(function(){
+			loadTaskDetail(task);
+		});
+
+		div_title.append(span_title);
+
+		div.append(div_due);
+		div.append(div_status);
+		div.append(div_title);
+
+		$('#divTasks').append(div);
+	}
+	function format_date(date)
+	{
+		if(date == null) return null;
+
+		var d = date.getDate();
+		var mo = date.getMonth() + 1;
+
+		var h = date.getHours();
+		var m = date.getMinutes();
+
+		var ret = "";
+		ret += date.getFullYear() + "-";
+		
+		if(mo < 10) ret += "0";
+		ret += mo + "-";
+		
+		if(d < 10) ret += "0";
+		ret += d + " ";
+		
+		if(h < 10) ret += "0";
+		ret += h + ":";
+		
+		if(m < 10) {
+			ret += "0";
+		}
+		ret += m;
+		
+		return ret;
+	}
+	function add_tasks_to_list(tasks, level)
+	{
+		var arr = Object.values(tasks);
+
+		arr.sort(function(a, b) {
+			d1 = due2(a);
+			d2 = due2(b);
+			if(d1 == null) return 1;
+			if(d2 == null) return -1;
+			if(d1 < d2) return -1;
+			if(d1 > d2) return 1;
+			return 0;
+		});
+
+		arr.forEach(function(task) {
+			add_task_to_list(task, level);
+
+			add_tasks_to_list(task.children, level + 1);
+		});
+	}
 	function loadTaskList(tree)
 	{
 		console.log(tree);
@@ -113,50 +258,8 @@ var myApp = window.myApp || {};
 		$("#formCreateInputParent option").remove();
 
 		resetParentSelect($("#formCreateInputParent"), null);
-
-		treeIter(tree, 0, function(task, level) {
 			
-			if(task["status_last"] != "NONE"){
-				//return;
-			}
-
-			if(task["isContainer"]) {
-				if(task["children"].length == 0) {
-					return;
-				}
-			}
-
-			var div = $("<div class=\"row task_row\">");
-
-			var div_due = $("<div class=\"col-3 task_due\">");
-			var div_status = $("<div class=\"col-3\">");
-
-			if(task['due2']){
-				div_due.html(task['due2']);
-			}else{
-				div_due.html('none');
-			}
-			
-			//var div_status = $("<div class=\"\">");
-			div_status.html(task["status_last"]);
-
-			var div_title = $("<div class=\"col title\">");
-
-			var span_title = $("<p></p>");
-			span_title.css("padding-left", 40 * level);
-			span_title.html(task['title']);
-			span_title.click(function(){
-				loadTaskDetail(task);
-			});
-
-			div_title.append(span_title);
-
-			div.append(div_due);
-			div.append(div_status);
-			div.append(div_title);
-
-			$('#divTasks').append(div);
-		});
+		add_tasks_to_list(tree, 0);
 	}
 	function taskDeleteCurrent() {
 		taskDelete(myApp.taskCurrent);
@@ -189,7 +292,7 @@ var myApp = window.myApp || {};
 			}],
 			function(result) {
 				console.log('update status result:', result);
-				
+
 				$("#divTaskDetail status").html(status_string);
 			},
 			function ajaxError(jqXHR, textStatus, errorThrown) {
@@ -201,18 +304,19 @@ var myApp = window.myApp || {};
 	function resetParentSelect(tag, selected_task_id)
 	{
 		tag.children().remove();
-		
+
 		tag.append($("<option value=\"None\">None</option>"));
-		
+
 		treeIter(myApp.tasks, 0, function(task, level) {
 			var selected = "";
-			if(task["_id"] == selected_task_id)
+			
+			if(task.task["_id"] == selected_task_id)
 			{
 				selected = "selected=\"selected\"";
 			}
-			
-			var op = $("<option value=\""+ task["_id"] +"\" " + selected + ">");
-			op.html('-'.repeat(level) + task["title"])
+
+			var op = $("<option value=\""+ task.task["_id"] +"\" " + selected + ">");
+			op.html('-'.repeat(level) + task.task["title"])
 
 			tag.append(op);
 		});
@@ -227,8 +331,8 @@ var myApp = window.myApp || {};
 			div.append(div_post);
 		});
 	}
-	function loadTaskDetail(task) {
-
+	function loadTaskDetail(task)
+	{
 		myApp.taskCurrent = task;
 
 		console.log("loadTaskEdit");
@@ -236,16 +340,16 @@ var myApp = window.myApp || {};
 
 		$("#divTasks").hide();
 		$("#divTaskCreate").hide();
-		
+
 		$("#divTaskDetail").show();
-		
+
 		$("#divTaskDetail #back").click(function(){
 			loadTaskList(myApp.tasks);
 		});
-		
+
 		/* update parent select tag */
 		resetParentSelect($("#divTaskDetail #parent"), task["parent"]);
-	
+
 		loadPosts(task);
 
 		$("#divTaskDetail #title").val(task["title"]);
@@ -264,7 +368,7 @@ var myApp = window.myApp || {};
 		console.log(parent);
 
 		event.preventDefault();
-		
+
 		taskCreate(title, due, parent_id);
 	}
 	function handleFormTaskEditTaskCreate(event) {
@@ -366,7 +470,7 @@ var myApp = window.myApp || {};
 		tasksList();
 		$('#formCreate').submit(handleFormCreate);
 		$('#formTaskEdit').submit(handleFormTaskEdit);
-		
+
 		$("#form_post form").submit(handleFormPost);
 
 		$('#divTaskEditTaskCreate form').submit(function(event) {

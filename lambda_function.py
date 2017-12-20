@@ -5,8 +5,9 @@ import pytz
 import todo
 
 def taskList(session, body):
-    tree = session.tree(session.task_view_default())
-    return todo.safeDict(tree.tree)
+    #tree = session.tree(session.task_view_default())
+    #return todo.safeDict(tree.tree)
+    return todo.safeDict(session.task_view_default())
 
 def taskCreate(session, body):
 
@@ -119,10 +120,15 @@ def lambda_handler(event, context):
         traceback.print_exc()
         return errorResponse(repr(e) + " event: " + str(event))
     
+def print_dict(d, level):
+    for id_, t in d.items():
+        print("-"*level + str(id_))
+        print_dict(t.get("children", {}), level+1)
+
 def test():
     s = todo.Session('charlesrymal-at-gmail.com')
     
-    print(taskList(s, None))
+    print_dict(taskList(s, None), 0)
 
 
 
