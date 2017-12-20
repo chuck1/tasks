@@ -19,6 +19,8 @@ class Task {
 
 		if(num_children_display > 0) return true;
 		
+		console.log(this.task["status_last"]);
+
 		if(this.task["status_last"] != "NONE") return false;
 		
 		if(this.task["isContainer"]) return false;

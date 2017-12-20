@@ -214,12 +214,12 @@ var myApp = window.myApp || {};
 			},
 			defaultAjaxError);
 	}
-	function taskUpdateStatusCurrent(status_string) {
+	function taskUpdateStatusCurrent(status_string)
+	{
 		taskUpdateStatus(myApp.taskCurrent, status_string);
 	}
-	function taskUpdateStatus(task, status_string) {
-		//task["status"] = status_string;
-
+	function taskUpdateStatus(task, status_string)
+	{
 		callAPI(
 			[{
 				"command": "update_status",
@@ -228,8 +228,12 @@ var myApp = window.myApp || {};
 			}],
 			function(result) {
 				console.log('update status result:', result);
-
-				$("#divTaskDetail status").html(status_string);
+				
+				// if success
+				
+				$("#divTaskDetail #status").html(status_string);
+				
+				task.task["status_last"] = status_string;
 			},
 			function ajaxError(jqXHR, textStatus, errorThrown) {
 				console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
