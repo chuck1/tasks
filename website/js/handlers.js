@@ -24,38 +24,41 @@ function callAPI(data, onSuccess, onFailure) {
 }
 function moveTask(task_id, subtree1, subtree2)
 {
+	console.log('move task');
+	console.log(subtree1)
+	console.log(subtree2)
+
 	subtree2[task_id] = subtree1[task_id];
 	delete subtree1[task_id];
 }
 function treeGetSubtree(tree, task_id)
 {
-	//console.log("treeGetSubtree");
+	console.log("tree get subtree");
+	console.log(tree);
+	console.log(Object.keys(tree));
 
-	for(var task_id1 in tree)
+	for(var task_id1 of Object.keys(tree))
 	{
-		if(tree.hasOwnProperty(task_id1))
-		{
-			var subtree = tree[task_id1]["tree"];
+		console.log(task_id1);
 
-			//console.log(task_id1 + " == " + task_id);
+		var task = tree[task_id1];
 
-			if(task_id1 == task_id) {
-				console.log("return:");
-				console.log(subtree);
-				console.log(subtree == null);
-				return subtree;
-			}
+		console.log(task);
 
-			subtree = treeGetSubtree(subtree, task_id);
+		var subtree = task.children;
 
-			if(subtree == null) {
-				//console.log("recursive returned null");
-			} else {
-				//console.log("return from recursive:");
-				//console.log(subtree);
-				return subtree;
-			}
+		//console.log(task_id1 + " == " + task_id);
+
+		if(task_id1 == task_id) {
+			console.log("return:");
+			console.log(subtree);
+			console.log(subtree == null);
+			return subtree;
 		}
+
+		subtree = treeGetSubtree(subtree, task_id);
+
+		if(subtree != null) return subtree;
 	}
 	return null;
 }
@@ -77,59 +80,68 @@ function handleFormTaskEdit(event)
 	task = myApp.taskCurrent;
 
 	title = $("#divTaskDetail #title").val();
+	
 	due = $("#divTaskDetail #due").val();
+	if(due == "") due = null;
+
 	parent_id = $("#divTaskDetail #parent").val();
 	var isContainer = $("#divTaskDetail #isContainer").prop("checked");
 
 	commands = [];
 
-	if(isContainer != task["isContainer"])
+	if(isContainer != task.task["isContainer"])
 	{
-		task["isContainer"] = isContainer;
+		task.task["isContainer"] = isContainer;
 
 		commands.push({
 			"command": "update_is_container",
-			"task_id": task["_id"],
+			"task_id": task.task["_id"],
 			"isContainer": isContainer
 		});
 	}
-	if(title != task["title"])
+	if(title != task.task["title"])
 	{
-		task["title"] = title;
+		task.task["title"] = title;
 
 		commands.push({
 			"command": "update_title",
-			"task_id": task["_id"],
+			"task_id": task.task["_id"],
 			"title": title
 		});
 	}
-	if(due != task["due_last"])
+	if(due != task.task["due_last"])
 	{
+		console.log('due changed');
+		console.log(task.task["due_last"]);
+		console.log(due);
+		
+		/*
 		commands.push({
 			"command": "update_due",
-			"task_id": task["_id"],
+			"task_id": task.task["_id"],
 			"due": due
 		});
+		*/
 	}
-	if(parent_id != task["parent"])
+	if(parent_id != task.task["parent"])
 	{
 		console.log("parent changed");
-		console.log(task["parent"]);
+		console.log(task.task["parent"]);
 		console.log(parent_id);
 
-		var tree1 = getSubtreeOrRoot(task["parent"]);
+		var tree1 = getSubtreeOrRoot(task.task["parent"]);
 		var tree2 = getSubtreeOrRoot(parent_id);
 
 		console.log(tree1);
 		console.log(tree2);
 
-		task["parent"] = parent_id;
+		task.task["parent"] = parent_id;
 
-		moveTask(task["_id"], tree1, tree2);
+		moveTask(task.task["_id"], tree1, tree2);
 
 		commands.push({
 			"command": "update_parent",
-			"task_id": task["_id"],
+			"task_id": task.task["_id"],
 			"parent_id_str": parent_id
 		});
 	}
@@ -156,10 +168,10 @@ function handleFormPost()
 {
 	console.log("handle form post");
 	event.preventDefault();
-	
-	var task_id = myApp.taskCurrent["_id"];
+
+	var task_id = myApp.taskCurrent.task["_id"];
 	var text = $("#form_post textarea#text").val();
-	
+
 	console.log(task_id);
 	console.log(text);
 

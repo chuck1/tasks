@@ -109,6 +109,8 @@ var myApp = window.myApp || {};
 
 		var div_due = $("<div class=\"col-3 task_due\">");
 		var div_status = $("<div class=\"col-3\">");
+		//var div_edit_button = $("<div class=\"col-3\">");
+		var div_edit_button = $("<div class=\"\">");
 
 		div_due.html(format_date(task.due()));
 
@@ -117,18 +119,22 @@ var myApp = window.myApp || {};
 
 		var div_title = $("<div class=\"col title\">");
 
-		var span_title = $("<p></p>");
-		span_title.css("padding-left", 40 * level);
-		span_title.html(task.task['title']);
-		span_title.click(function(){
+		var p_title = $("<p></p>");
+		p_title.css("padding-left", 40 * level);
+		
+		p_title.html(markdown.toHTML(task.task['title']));
+		
+		div_edit_button.html("edit");
+		div_edit_button.click(function(){
 			loadTaskDetail(task);
 		});
 
-		div_title.append(span_title);
+		div_title.append(p_title);
 
 		div.append(div_due);
 		div.append(div_status);
 		div.append(div_title);
+		div.append(div_edit_button);
 
 		$('#divTasks').append(div);
 	}
@@ -161,7 +167,7 @@ var myApp = window.myApp || {};
 		
 		return ret;
 	}
-	function add_tasks_to_list(tasks, level)
+	function add_tasks_to_list(container, tasks, level)
 	{
 		var arr = Object.values(tasks);
 
@@ -195,7 +201,7 @@ var myApp = window.myApp || {};
 
 		resetParentSelect($("#formCreateInputParent"), null);
 			
-		add_tasks_to_list(tree, 0);
+		add_tasks_to_list($("#divTasks"), tree, 0);
 	}
 	function taskDeleteCurrent() {
 		taskDelete(myApp.taskCurrent);
@@ -416,6 +422,9 @@ var myApp = window.myApp || {};
 		});
 		$("#divTaskDetail #complete").click(function(){
 			taskUpdateStatusCurrent("COMPLETE");
+		});
+		$("#divTaskDetail #cancelled").click(function(){
+			taskUpdateStatusCurrent("CANCELLED");
 		});
 		$("#divTaskDetail #delete").click(function(){
 			taskDeleteCurrent();
