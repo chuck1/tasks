@@ -101,42 +101,51 @@ var myApp = window.myApp || {};
 		}
 		return null;
 	}
-	function add_task_to_list(task, level)
+	function add_task_to_list(container, task, level)
 	{
 		if(!task.should_display()) return;
 
-		var div = $("<div class=\"row task_row\">");
+		var row = $("<div class=\"row\">");
 
-		var div_due = $("<div class=\"col-3 task_due\">");
-		var div_status = $("<div class=\"col-3\">");
-		//var div_edit_button = $("<div class=\"col-3\">");
-		var div_edit_button = $("<div class=\"\">");
+		var div = $("<div class=\"detail\">");
 
-		div_due.html(format_date(task.due()));
+		var div_due = $("<div class=\"col due\">");
+		var div_status = $("<div class=\"col status\">");
+		var div_title =  $("<div class=\"col title\">");
+		var div_edit_button = $("<div class=\"col edit\">");
+		
+
+		div_due.html(format_date(task.due()) + " ");
 
 		//var div_status = $("<div class=\"\">");
 		div_status.html(task.task["status_last"]);
 
-		var div_title = $("<div class=\"col title\">");
-
 		var p_title = $("<p></p>");
 		p_title.css("padding-left", 40 * level);
-		
+
 		p_title.html(markdown.toHTML(task.task['title']));
-		
+
 		div_edit_button.html("edit");
 		div_edit_button.click(function(){
 			loadTaskDetail(task);
 		});
 
 		div_title.append(p_title);
+		
 
 		div.append(div_due);
 		div.append(div_status);
-		div.append(div_title);
 		div.append(div_edit_button);
+		div.append(div_title);
 
-		$('#divTasks').append(div);
+		var div_list = $("<div class=\"list\">");
+
+		add_tasks_to_list(div_list, task.children, level + 1);
+
+		row.append(div);
+		row.append(div_list);
+
+		container.append(row);
 	}
 	function format_date(date)
 	{
@@ -150,21 +159,21 @@ var myApp = window.myApp || {};
 
 		var ret = "";
 		ret += date.getFullYear() + "-";
-		
+
 		if(mo < 10) ret += "0";
 		ret += mo + "-";
-		
+
 		if(d < 10) ret += "0";
 		ret += d + " ";
-		
+
 		if(h < 10) ret += "0";
 		ret += h + ":";
-		
+
 		if(m < 10) {
 			ret += "0";
 		}
 		ret += m;
-		
+
 		return ret;
 	}
 	function add_tasks_to_list(container, tasks, level)
@@ -182,9 +191,9 @@ var myApp = window.myApp || {};
 		});
 
 		arr.forEach(function(task) {
-			add_task_to_list(task, level);
+			add_task_to_list(container, task, level);
 
-			add_tasks_to_list(task.children, level + 1);
+			//add_tasks_to_list(container, task.children, level + 1);
 		});
 	}
 	function loadTaskList(tree)
@@ -200,7 +209,7 @@ var myApp = window.myApp || {};
 		$("#formCreateInputParent option").remove();
 
 		resetParentSelect($("#formCreateInputParent"), null);
-			
+
 		add_tasks_to_list($("#divTasks"), tree, 0);
 	}
 	function taskDeleteCurrent() {
@@ -234,11 +243,11 @@ var myApp = window.myApp || {};
 			}],
 			function(result) {
 				console.log('update status result:', result);
-				
+
 				// if success
-				
+
 				$("#divTaskDetail #status").html(status_string);
-				
+
 				task.task["status_last"] = status_string;
 			},
 			function ajaxError(jqXHR, textStatus, errorThrown) {
@@ -255,7 +264,7 @@ var myApp = window.myApp || {};
 
 		treeIter(myApp.tasks, 0, function(task, level) {
 			var selected = "";
-			
+
 			if(task.task["_id"] == selected_task_id)
 			{
 				selected = "selected=\"selected\"";

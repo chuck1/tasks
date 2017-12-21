@@ -20,3 +20,5 @@ pwd
 
 python3 script/deploy.py $here/deployment.zip
 
+python3 script/upload_website.py
+

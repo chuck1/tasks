@@ -1,14 +1,36 @@
 body{
 	font-family: "Courier New", Courier, monospace;
 	/*font-size: 10px;*/
+	background-color: #CCCCCC;
 }
-div.task_row {
-	/*overflow: auto;*/
-	border-style: solid; 
-	border-width: 1px;
+div.row {
+	overflow: auto;
+	background-color: #FFFFFF;
+	margin: 5px;
+	border-radius: 3px;
+	padding: 2px;
+	box-shadow: 1px 1px #AAAAAA;
+}
+div.col {
+	float: left;
+}
+div.col.due {
+	width: 180px;
+}
+div.col.status {
+	width: 100px;
+}
+div.col.edit {
+	width: 80px;
 }
 div.col.title p {
 	margin: 0;
+}
+div.row div.detail {
+	overflow: hidden;
+}
+div.row div.list {
+	background-color: #CCCCCC;
 }
 
 textarea {
