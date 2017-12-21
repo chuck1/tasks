@@ -137,13 +137,19 @@ var myApp = window.myApp || {};
 		div.append(div_status);
 		div.append(div_edit_button);
 		div.append(div_title);
+		
 
-		var div_list = $("<div class=\"list\">");
-
-		add_tasks_to_list(div_list, task.children, level + 1);
 
 		row.append(div);
-		row.append(div_list);
+	
+		if(Object.values(task.children).length > 0)
+		{
+			var div_list = $("<div class=\"list\">");
+
+			add_tasks_to_list(div_list, task.children, level + 1);
+
+			row.append(div_list);
+		}
 
 		container.append(row);
 	}

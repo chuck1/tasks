@@ -23,14 +23,30 @@ div.col.status {
 div.col.edit {
 	width: 80px;
 }
-div.col.title p {
+div.col p {
 	margin: 0;
+}
+div.col.title {
+	width: 600px;
+	word-wrap: break-word;
 }
 div.row div.detail {
 	overflow: hidden;
 }
-div.row div.list {
+div.row div.row {
 	background-color: #CCCCCC;
+}
+div.row div.row div.row {
+	background-color: #FFFFFF;
+}
+div.row div.list {
+	/*
+	background-color: #CCCCCC;
+	margin: 3px;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	border-radius: 5px;
+	*/
 }
 
 textarea {
