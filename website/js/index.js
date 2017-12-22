@@ -115,7 +115,7 @@ var myApp = window.myApp || {};
 		var div_edit_button = $("<div class=\"col edit\">");
 		
 
-		div_due.html(format_date(task.due()) + " ");
+		div_due.html(format_date(task.due()) + "&nbsp;");
 
 		//var div_status = $("<div class=\"\">");
 		div_status.html(task.task["status_last"]);
@@ -155,7 +155,7 @@ var myApp = window.myApp || {};
 	}
 	function format_date(date)
 	{
-		if(date == null) return null;
+		if(date == null) return "";
 
 		var d = date.getDate();
 		var mo = date.getMonth() + 1;
