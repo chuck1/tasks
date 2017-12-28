@@ -115,13 +115,11 @@ function handleFormTaskEdit(event)
 		console.log(task.task["due_last"]);
 		console.log(due);
 		
-		/*
 		commands.push({
 			"command": "update_due",
 			"task_id": task.task["_id"],
 			"due": due
 		});
-		*/
 	}
 	if(parent_id != task.task["parent"])
 	{
