@@ -25,19 +25,17 @@ class Task {
 
 		return true;
 	}
-	due()
+	due(depth=0)
 	{
-		//console.log(task);
 		//console.log(child_branches);
 
-		var children_due = Object.values(this.children).map(child => child.due());
+		var children_due = Object.values(this.children).map(child => child.due(depth + 1));
 		
 		var children_due2 = children_due.map(function (d) {
 			if(d == null) return null;
 			return new Date(d);
 		});
-		
-		//console.log(children_due2);
+
 
 		var i = argmin(children_due2);
 
@@ -47,10 +45,22 @@ class Task {
 
 		if(this.task["due_last"] == null) return children_due2[i];
 		
-		var d = Date(this.task["due_last"])
+		var d0 = new Date(this.task["due_last"]);
 
-		if(d < children_due2[i]) {
-			return d;
+		/*
+		if(depth == 0)
+		{		
+			console.log(this);
+			console.log(this.task["due_last"]);
+			console.log(d0);
+			console.log(Date(this.task["due_last"]));
+			console.log(children_due2);
+			console.log(d0 < children_due2[i]);
+		}*/
+		
+
+		if(d0 < children_due2[i]) {
+			return d0;
 		}
 		
 		return children_due[i];

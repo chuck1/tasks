@@ -13,6 +13,8 @@ import pymongo
 import bson
 
 from .todo_datetime import *
+from .status import *
+import todo.task
 
 class Session:
     """
@@ -20,8 +22,13 @@ class Session:
 
     * title - string
     * creator - ObjectID of user
-    * due - datetime object
-    * status - integer
+    * due - datetime object (tracked)
+    * status - integer (tracked)
+
+    Tracked field are actually lists where each item is a datetime and the type to be stored.
+    When the user changes the value of the field, a new item is added with the new value and
+    the datetime at which the change was made.
+    This way, you have a timeline of all changes that were made to that field.
 
     """
 
@@ -80,8 +87,14 @@ class Session:
         return self.db.tasks.insert_one(t)
 
     def agg_due_last(self, fields=[]):
-        yield {"$project": dict([("due_last", {"$arrayElemAt": ["$due", -1]}) ] + [(f, 1) for f in self.fields + fields])}
-        yield {"$project": dict([("due_last", "$due_last.value")] + [(f, 1) for f in self.fields + fields])}
+        field0 = ("due_last", {"$arrayElemAt": ["$due", -1]})
+        field1 = ("due_last", "$due_last.value")
+
+        fields0 = [field0] + [(f, 1) for f in self.fields + fields]
+        fields1 = [field1] + [(f, 1) for f in self.fields + fields]
+
+        yield {"$project": dict(fields0)}
+        yield {"$project": dict(fields1)}
 
     def agg_status_last(self):
         yield {"$project": dict([("status_last", {"$arrayElemAt": ["$status", -1]}) ] + [(f, 1) for f in self.fields])}
@@ -105,7 +118,7 @@ class Session:
         
         c = self.aggregate(list(self.agg_default()))
         
-        flat = dict((t["_id"], _Task(self, t)) for t in c)
+        flat = dict((t["_id"], todo.task._Task(self, t)) for t in c)
         
         def _get_task(id_):
             if id_ not in flat.keys():
@@ -126,7 +139,7 @@ class Session:
             t["children"] = dict((child["id"], _get_task(child["id"])) for child in elem["children"])
        
         for t in flat.values():
-            assert isinstance(t, _Task)
+            assert isinstance(t, todo.task._Task)
         
         tasks = flat
 

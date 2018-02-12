@@ -2,7 +2,8 @@ import datetime
 import json
 import traceback
 import pytz
-import todo
+
+import todo.session
 
 def taskList(session, body):
     #tree = session.tree(session.task_view_default())
@@ -106,7 +107,7 @@ def lambda_handler(event, context):
     try:
         body = json.loads(event["body"])
         username = event["requestContext"]["authorizer"]["claims"]['cognito:username']
-        session = todo.Session(username)
+        session = todo.session.Session(username)
         responseBody = json.dumps([processBody(event, session, b) for b in body])
         
         return {
@@ -127,13 +128,15 @@ def print_dict(d, level):
         print_dict(t.get("children", {}), level+1)
 
 def test():
-    s = todo.Session('charlesrymal-at-gmail.com')
+    #s = todo.session.Session('charlesrymal-at-gmail.com')
     
-    print_dict(taskList(s, None), 0)
+    #print_dict(taskList(s, None), 0)
+    
+    body = [{"command":"list"}]
 
+    res = lambda_handler({"body":json.dumps(body), "requestContext": {"authorizer": {"claims": {'cognito:username': 'charlesrymal-at-gmail.com'}}}}, {})
 
-
-
+    print(res)
 
 
 
