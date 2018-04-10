@@ -101,9 +101,25 @@ var myApp = window.myApp || {};
 		}
 		return null;
 	}
-	function add_task_to_list(container, task, level)
+	function create_list(container, task, level)
 	{
-		if(!task.should_display()) return;
+		console.log('create list');
+
+		if(!task.should_display()) {
+			console.log('should not display');
+			return;	
+		}
+
+		var div = $("<div>");
+		div.css('width', '150px');
+		div.css('float', 'left');
+		div.css('background-color', '#ffffff');
+
+		div.text(task.task['title']);
+
+		container.append(div);
+
+		return;
 
 		var row = $("<div class=\"row\">");
 
@@ -182,8 +198,10 @@ var myApp = window.myApp || {};
 
 		return ret;
 	}
-	function add_tasks_to_list(container, tasks, level)
+	function create_lists(container, tasks, level)
 	{
+		console.log('create lists');
+
 		var arr = Object.values(tasks);
 
 		arr.sort(function(a, b) {
@@ -197,7 +215,7 @@ var myApp = window.myApp || {};
 		});
 
 		arr.forEach(function(task) {
-			add_task_to_list(container, task, level);
+			create_list(container, task, level);
 
 			//add_tasks_to_list(container, task.children, level + 1);
 		});
@@ -216,7 +234,7 @@ var myApp = window.myApp || {};
 
 		resetParentSelect($("#formCreateInputParent"), null);
 
-		add_tasks_to_list($("#divTasks"), tree, 0);
+		create_lists($("#divTasks"), tree, 0);
 	}
 	function taskDeleteCurrent() {
 		taskDelete(myApp.taskCurrent);

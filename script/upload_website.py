@@ -3,7 +3,7 @@
 import os
 import boto3
 import json
-import pymake
+#import pymake
 
 DIR = os.path.dirname(__file__)
 

@@ -2,3 +2,4 @@
 *.egg-info/
 db.json
 *.zip
+env/

@@ -56,6 +56,10 @@ div.row div.list {
 	*/
 }
 
+div.tasks_lists {
+	width: 100000px;
+}
+
 textarea {
 	width: 500px;
 }
