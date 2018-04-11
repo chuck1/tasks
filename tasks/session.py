@@ -88,7 +88,7 @@ class Session:
 
         item = self.db.tasks.find_one(res.inserted_id)
 
-        return tasks.task.Task(item)
+        return tasks.task.Task(self, item)
 
     def agg_due_last(self, fields=[]):
         field0 = ("due_last", {"$arrayElemAt": ["$due", -1]})
@@ -122,7 +122,7 @@ class Session:
         
         c = self.aggregate(list(self.agg_default()))
         
-        flat = dict((t["_id"], tasks.task._Task(self, t)) for t in c)
+        flat = dict((t["_id"], tasks.task.Task(self, t)) for t in c)
         
         def _get_task(id_):
             if id_ not in flat.keys():
@@ -130,7 +130,7 @@ class Session:
                 #task['due_last'] = task['due'][-1]['value']
                 #task['status_last'] = task['status'][-1]['value']
                     
-                flat[id_] = _Task(self, task)
+                flat[id_] = Task(self, task)
             
             return flat[id_]
 
@@ -143,7 +143,7 @@ class Session:
             t["children"] = dict((child["id"], _get_task(child["id"])) for child in elem["children"])
        
         for t in flat.values():
-            assert isinstance(t, tasks.task._Task)
+            assert isinstance(t, tasks.task.Task)
         
         task_list = flat
 
@@ -229,11 +229,11 @@ class Session:
  
     def show(self, filt):
         
-        print(("{{:24}} {{:25}} {{:11}}{{:{}}} {{}}").format(_Task.column_width['title']).format("id", "due", "status", "title", "tags"))
+        print(("{{:24}} {{:25}} {{:11}}{{:{}}} {{}}").format(Task.column_width['title']).format("id", "due", "status", "title", "tags"))
 
         for t in self.find(filt):
 
-            t = _Task(self, t)
+            t = Task(self, t)
             id_str = str(t.d['_id']) + ' '
             str_title = crayons.white("{:48} ".format(t.d['title'][:48]), bold=True)
             str_tags = "{:32}".format(str(', '.join(t.d.get('tags',[])))[:32])
@@ -261,7 +261,7 @@ class Session:
         for t in tasks:
             assert t is not None
 
-            t = _Task(self, t)
+            t = Task(self, t)
 
             id_str = str(t.d['_id']) + ' '
             str_title = crayons.white("{:48} ".format(t.d['title'][:48]), bold=True)

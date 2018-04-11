@@ -137,6 +137,8 @@ def _test_lambda(body):
 def test1():
     res = _test_lambda([{"command": "list"}])
 
+    print(res['body'])
+
     task_list = json.loads(res['body'])[0]
 
     for task_id, t in task_list.items():
@@ -147,7 +149,9 @@ def test2(session):
 
     res = session.task('test', None, None)
 
-    print(res.inserted_id)
+    print(res)
+
+    
 
 def test():
     test1()
