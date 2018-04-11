@@ -1,7 +1,7 @@
 body{
 	font-family: "Courier New", Courier, monospace;
 	/*font-size: 10px;*/
-	background-color: #CCCCCC;
+	background-color: rgb(0, 121, 191);
 }
 div.row {
 	overflow: auto;
@@ -11,53 +11,52 @@ div.row {
 	padding: 2px;
 	box-shadow: 1px 1px #AAAAAA;
 }
-div.col {
-	float: left;
-}
-div.col.due {
-	width: 180px;
-}
-div.col.status {
-	width: 100px;
-}
-div.col.edit {
-	width: 80px;
-}
-div.col p {
-	margin: 0;
-}
-div.col.title {
-	width: 600px;
-	word-wrap: break-word;
-}
-div.row div.detail {
-	overflow: hidden;
-	padding-left: 14px;
-}
-div.row div.row div.detail {
-	padding-left: 7px;
-}
-div.row div.row div.row div.detail {
-	padding-left: 0px;
-}
-div.row div.row {
-	background-color: #CCCCCC;
-}
-div.row div.row div.row {
-	background-color: #FFFFFF;
-}
-div.row div.list {
-	/*
-	background-color: #CCCCCC;
-	margin: 3px;
-	padding-top: 1px;
-	padding-bottom: 1px;
-	border-radius: 5px;
-	*/
-}
-
 div.tasks_lists {
 	width: 100000px;
+}
+div.tasks_list {
+	margin: 5px;
+	padding: 5px;
+	width: 160px;
+	float: left;
+	background-color: #cccccc;
+	border-radius: 3px;
+}
+div.tasks_list div.title {
+	font-weight: bold;
+}
+div.tasks_list_item {
+	margin: 5px;
+	margin-top: 10px;
+	padding: 5px;
+	background-color: #ffffff;
+	border-radius: 3px;
+}
+
+div#divTaskDetail {
+	background-color: #cccccc;
+}
+
+.modal {
+	display: none; /* Hidden by default */
+	position: fixed; /* Stay in place */
+	z-index: 1; /* Sit on top */
+	left: 0;
+	top: 0;
+	width: 100%; /* Full width */
+	height: 100%; /* Full height */
+	overflow: auto; /* Enable scroll if needed */
+	background-color: rgb(0,0,0); /* Fallback color */
+	background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+	background-color: #fefefe;
+	margin: 15% auto; /* 15% from the top and centered */
+	padding: 20px;
+	border: 1px solid #888;
+	width: 80%; /* Could be more or less, depending on screen size */
 }
 
 textarea {
@@ -71,6 +70,53 @@ textarea {
 		/*float: left;*/
 	}
 }
+
+/*
+div.col {
+float: left;
+}
+div.col.due {
+width: 180px;
+}
+div.col.status {
+width: 100px;
+}
+div.col.edit {
+width: 80px;
+}
+div.col p {
+margin: 0;
+}
+div.col.title {
+width: 600px;
+word-wrap: break-word;
+}
+div.row div.detail {
+overflow: hidden;
+padding-left: 14px;
+}
+div.row div.row div.detail {
+padding-left: 7px;
+}
+div.row div.row div.row div.detail {
+padding-left: 0px;
+}
+div.row div.row {
+background-color: #CCCCCC;
+}
+div.row div.row div.row {
+background-color: #FFFFFF;
+}
+div.row div.list {
+/
+background-color: #CCCCCC;
+margin: 3px;
+padding-top: 1px;
+padding-bottom: 1px;
+border-radius: 5px;
+/
+}
+ */
 
 
 

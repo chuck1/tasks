@@ -2,7 +2,7 @@
 here=`pwd`
 
 zip deployment.zip lambda_function.py
-zip -r deployment.zip todo
+zip -r deployment.zip tasks
 
 cd env/lib/python3.6/site-packages
 
