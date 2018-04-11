@@ -84,7 +84,11 @@ class Session:
                 'parent': parent_id,
                 }
     
-        return self.db.tasks.insert_one(t)
+        res = self.db.tasks.insert_one(t)
+
+        item = self.db.tasks.find_one(res.inserted_id)
+
+        return tasks.task.Task(item)
 
     def agg_due_last(self, fields=[]):
         field0 = ("due_last", {"$arrayElemAt": ["$due", -1]})

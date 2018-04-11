@@ -1,6 +1,6 @@
 import tasks
 
-class _Task:    
+class Task:    
     column_width = {'title': 48}
     
     def __init__(self, session, d):

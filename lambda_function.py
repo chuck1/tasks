@@ -23,7 +23,7 @@ def taskCreate(session, body):
             parent_id = body["parent_id"]
     else:
         parent_id = None
-
+    
     session.task(
             body["title"], 
             due,
@@ -127,20 +127,34 @@ def print_dict(d, level):
         print("-"*level + str(id_))
         print_dict(t.get("children", {}), level+1)
 
-def test0(body):
+def _test_lambda(body):
     res = lambda_handler({
         "body": json.dumps(body),
         "requestContext": {"authorizer": {"claims": {'cognito:username': 'charlesrymal-at-gmail.com'}}}}, {})
 
     return res
 
-def test():
-    res = test0([{"command": "list"}])
+def test1():
+    res = _test_lambda([{"command": "list"}])
 
     task_list = json.loads(res['body'])[0]
 
     for task_id, t in task_list.items():
         print(t['title'])
+
+def test2(session):
+    print('test2')
+
+    res = session.task('test', None, None)
+
+    print(res.inserted_id)
+
+def test():
+    test1()
+    
+    session = tasks.session.Session('charlesrymal-at-gmail.com')
+
+    test2(session)
 
 
 
