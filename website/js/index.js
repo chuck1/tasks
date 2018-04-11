@@ -2,6 +2,34 @@
 
 var myApp = window.myApp || {};
 
+class ViewTasksList {
+	constructor(root, tasks) {
+		this.root = root;
+
+		this.tasks = {};
+
+		Object.values(tasks).forEach(function(task) {
+			this.tasks[task["_id"]] = new Task(task);
+		}, this);
+	}
+	load()
+	{
+		$("#divTasks").show();
+		//$("#divTaskCreate").show();
+
+		// clear list
+		$("#divTasks div").remove();
+
+		// clear select element
+		$("#formCreateInputParent option").remove();
+
+		//resetParentSelect($("#formCreateInputParent"), null);
+
+		create_lists($("#divTasks"), this.tasks, 0);
+	}
+}
+
+var view = null;
 
 var authToken;
 
@@ -23,6 +51,14 @@ function process_received_tasks(tasks)
 		myApp.tasks[task["_id"]] = new Task(task);
 	});
 }
+function receive_view_tasks_list(data) {
+	load_view_tasks_list(data.root, data.tasks);
+}
+function load_view_tasks_list(root, tasks) {
+	view = new ViewTasksList(root, tasks);
+	//process_received_tasks(tasks);
+	view.load();
+}
 function taskCreate(title, due, parent_id) {
 	callAPI(
 		[{
@@ -36,14 +72,7 @@ function taskCreate(title, due, parent_id) {
 			console.log('Response:');
 			console.log(result);
 
-			/* clear form */
-			$('#formCreateInputTitle').val("");
-			$('#formCreateInputDue').val("");
-			$('#formCreateInputParent').val("None");
-
-			var tasks = result[0];
-			process_received_tasks(tasks);
-			loadTaskList(myApp.tasks);
+			receive_view_tasks_list(result[0]);
 		},
 		function ajaxError(jqXHR, textStatus, errorThrown) {
 			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -52,19 +81,18 @@ function taskCreate(title, due, parent_id) {
 		});
 }
 
-function tasksList() {
+function tasks_view_list(root_task_id) {
 	callAPI(
 		[{
-			"command": "list"
+			"command": "list",
+			"root": root_task_id,
 		}],
 		function(result)
 		{
 			console.log('Response:');
 			console.log(result);
 
-			var tasks = result[0];
-			process_received_tasks(tasks);
-			loadTaskList(myApp.tasks);
+			receive_view_tasks_list(result[0]);
 		},
 		function ajaxError(jqXHR, textStatus, errorThrown) {
 			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -99,6 +127,22 @@ function treeGetBranch(tree, task_id)
 		}
 	}
 	return null;
+}
+function create_list_form(container)
+{
+	var div = $("<div>");
+	div.addClass('tasks_list');
+	
+	var input = $('<input type="text">');
+	var button = $('<button>save</button>');
+	
+	button.click((ev) => {
+		taskCreate(input.val(), null, null);
+	});
+
+	div.append(input);
+	div.append(button);
+	container.append(div);
 }
 function create_list(container, task, level)
 {
@@ -142,49 +186,10 @@ function create_list(container, task, level)
 
 	return;
 
-	var row = $("<div class=\"row\">");
-
-	var div = $("<div class=\"detail\">");
-
 	var div_due = $("<div class=\"col due\">");
 	var div_status = $("<div class=\"col status\">");
-	var div_title =  $("<div class=\"col title\">");
-	var div_edit_button = $("<div class=\"col edit\">");
-	
 	div_due.html(format_date(task.due()) + "&nbsp;");
-
-	//var div_status = $("<div class=\"\">");
 	div_status.html(task.task["status_last"]);
-
-	var p_title = $("<p></p>");
-	p_title.css("padding-left", 40 * level);
-
-	p_title.html(markdown.toHTML(task.task['title']));
-
-	div_edit_button.html("edit");
-	div_edit_button.click(function(){
-		loadTaskDetail(task);
-	});
-
-	div_title.append(p_title);
-
-	div.append(div_due);
-	div.append(div_status);
-	div.append(div_edit_button);
-	div.append(div_title);
-	
-	row.append(div);
-
-	if(Object.values(task.children).length > 0)
-	{
-		var div_list = $("<div class=\"list\">");
-
-		add_tasks_to_list(div_list, task.children, level + 1);
-
-		row.append(div_list);
-	}
-
-	container.append(row);
 }
 function format_date(date)
 {
@@ -233,46 +238,26 @@ function tasks_to_array(tasks) {
 function create_lists(container, tasks, level)
 {
 	console.log('create lists');
+	console.log(tasks);
 
-	var arr = Object.values(tasks);
-
-	arr.sort(function(a, b) {
-		d1 = a.due();
-		d2 = b.due();
-		if(d1 == null) return 1;
-		if(d2 == null) return -1;
-		if(d1 < d2) return -1;
-		if(d1 > d2) return 1;
-		return 0;
-	});
-
-	arr.forEach(function(task) {
+	tasks_to_array(tasks).forEach(function(task) {
 		create_list(container, task, level);
 
 		//dd_tasks_to_list(container, task.children, level + 1);
 	});
-}
-function loadTaskList(tree)
-{
-	$("#divTasks").show();
-	$("#divTaskCreate").show();
-	$("#divTaskDetail").hide();
 
-	// clear list
-	$("#divTasks div").remove();
-
-	// clear select element
-	$("#formCreateInputParent option").remove();
-
-	resetParentSelect($("#formCreateInputParent"), null);
-
-	create_lists($("#divTasks"), tree, 0);
+	create_list_form(container);
 }
 function taskDeleteCurrent() {
 	taskDelete(myApp.taskCurrent);
 }
-function taskDelete(task) {
+function taskDelete(task, on_delete) {
 	if(!confirm("Permanently delete task \"" + task.task["title"] + "\"?")) return;
+
+	on_delete();
+
+	task.is_deleted = true;
+	view.load();
 
 	callAPI(
 		[{
@@ -281,7 +266,6 @@ function taskDelete(task) {
 		}],
 		function(response) {
 			console.log("response:", response);
-			tasksList();
 		},
 		defaultAjaxError);
 }
@@ -394,7 +378,8 @@ function create_task_detail_modal(task) {
 	table.append("<tr><td><input type=\"submit\" value=\"Update\"></td></tr>");
 	
 	form.append(table);
-
+	div.append(form);
+	
 	div.append("Status: <span id=\"status\"></span><br>");
 	div.append("<button id=\"complete\">complete</button><br>");
 	div.append("<button id=\"cancelled\">cancelled</button><br>");
@@ -403,26 +388,17 @@ function create_task_detail_modal(task) {
 	var button_delete = $("<button>delete</button>");
 
 	button_delete.click(function() {
-		taskDelete(task);
+		taskDelete(task, () => {
+			outer.css('display', 'none');
+		});
 	});
 
 	div.append(button_delete);
 
 
-	div.append(form);
 	outer.append(div);
 	$("body").append(outer);
 	/*
-	myApp.taskCurrent = task;
-
-	$("#divTasks").hide();
-	$("#divTaskCreate").hide();
-
-	$("#divTaskDetail").show();
-
-	$("#divTaskDetail #back").click(function(){
-		loadTaskList(myApp.tasks);
-	});
 	// update parent select tag 
 	resetParentSelect($("#divTaskDetail #parent"), task.task["parent"]);
 
@@ -458,7 +434,9 @@ function create_task_detail_modal(task) {
 	*/
 }
 $(function onDocReady() {
-	tasksList();
+	var root_task_id = null;
+	tasks_view_list(root_task_id);
+
 	$('#formCreate').submit(handleFormCreate);
 	$('#formTaskEdit').submit(handleFormTaskEdit);
 

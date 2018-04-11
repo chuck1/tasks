@@ -10,11 +10,15 @@ class Task {
 				children[child["_id"]] = new Task(child);
 			});
 		}
-
+		
 		this.children = children;
+
+		this.is_deleted = false;
 	}
 	should_display()
 	{	
+		if(this.is_deleted) return false;
+
 		var num_children_display = Object.values(this.children).filter(task => task.should_display()).length;
 
 		if(num_children_display > 0) return true;

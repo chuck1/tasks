@@ -8,7 +8,12 @@ import tasks.session
 def taskList(session, body):
     #tree = session.tree(session.task_view_default())
     #return tasks.safeDict(tree.tree)
-    return tasks.safeDict(session.task_view_default())
+
+    res = {
+            'tasks': tasks.safeDict(session.task_view_default()),
+            'root': None,
+            }
+    return res
 
 def taskCreate(session, body):
 
