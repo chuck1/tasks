@@ -14,7 +14,7 @@ import bson
 
 from .todo_datetime import *
 from .status import *
-import todo.task
+import tasks.task
 
 class Session:
     """
@@ -118,7 +118,7 @@ class Session:
         
         c = self.aggregate(list(self.agg_default()))
         
-        flat = dict((t["_id"], todo.task._Task(self, t)) for t in c)
+        flat = dict((t["_id"], tasks.task._Task(self, t)) for t in c)
         
         def _get_task(id_):
             if id_ not in flat.keys():
@@ -139,11 +139,11 @@ class Session:
             t["children"] = dict((child["id"], _get_task(child["id"])) for child in elem["children"])
        
         for t in flat.values():
-            assert isinstance(t, todo.task._Task)
+            assert isinstance(t, tasks.task._Task)
         
-        tasks = flat
+        task_list = flat
 
-        return collections.OrderedDict((id_, t) for id_, t in tasks.items() if t.get("parent", None) is None)
+        return collections.OrderedDict((id_, t) for id_, t in task_list.items() if t.get("parent", None) is None)
 
     def task_delete(self, task_id):
         self.db.tasks.delete_one(self.filter_id(task_id))

@@ -1,4 +1,4 @@
-from todo import *
+import tasks
 
 class _Task:    
     column_width = {'title': 48}
@@ -23,7 +23,7 @@ class _Task:
 
     def posts(self):
         for post in self.d.get("posts", []):
-            yield SafePost(self.session, post)
+            yield tasks.SafePost(self.session, post)
     
     def due_str(self):
         due = self.d['due_last']

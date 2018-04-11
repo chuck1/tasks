@@ -1,0 +1,4 @@
+#!/bin/bash
+. env/bin/activate
+python -c 'import lambda_function; lambda_function.test()'
+

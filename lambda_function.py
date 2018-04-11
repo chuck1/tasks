@@ -3,16 +3,16 @@ import json
 import traceback
 import pytz
 
-import todo.session
+import tasks.session
 
 def taskList(session, body):
     #tree = session.tree(session.task_view_default())
-    #return todo.safeDict(tree.tree)
-    return todo.safeDict(session.task_view_default())
+    #return tasks.safeDict(tree.tree)
+    return tasks.safeDict(session.task_view_default())
 
 def taskCreate(session, body):
 
-    due = todo.stringToDatetime(body["due"])
+    due = tasks.stringToDatetime(body["due"])
     
     p = body["parent_id"]
 
@@ -33,13 +33,13 @@ def taskCreate(session, body):
 
 def taskUpdateDue(session, body):
     task_id = body["task_id"]
-    due = todo.stringToDatetime(body["due"])
+    due = tasks.stringToDatetime(body["due"])
     session.updateDue(session.filter_id(task_id), due)
     return "update due success"
 
 def taskUpdateStatus(session, body):
     task_id = body["task_id"]
-    status = todo.Status[body["status"]]
+    status = tasks.Status[body["status"]]
     session.updateStatus(session.filter_id(task_id), status)
     return "success"
 
@@ -107,7 +107,7 @@ def lambda_handler(event, context):
     try:
         body = json.loads(event["body"])
         username = event["requestContext"]["authorizer"]["claims"]['cognito:username']
-        session = todo.session.Session(username)
+        session = tasks.session.Session(username)
         responseBody = json.dumps([processBody(event, session, b) for b in body])
         
         return {
@@ -127,16 +127,20 @@ def print_dict(d, level):
         print("-"*level + str(id_))
         print_dict(t.get("children", {}), level+1)
 
+def test0(body):
+    res = lambda_handler({
+        "body": json.dumps(body),
+        "requestContext": {"authorizer": {"claims": {'cognito:username': 'charlesrymal-at-gmail.com'}}}}, {})
+
+    return res
+
 def test():
-    #s = todo.session.Session('charlesrymal-at-gmail.com')
-    
-    #print_dict(taskList(s, None), 0)
-    
-    body = [{"command":"list"}]
+    res = test0([{"command": "list"}])
 
-    res = lambda_handler({"body":json.dumps(body), "requestContext": {"authorizer": {"claims": {'cognito:username': 'charlesrymal-at-gmail.com'}}}}, {})
+    task_list = json.loads(res['body'])[0]
 
-    print(res)
+    for task_id, t in task_list.items():
+        print(t['title'])
 
 
 

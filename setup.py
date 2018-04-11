@@ -3,7 +3,7 @@ import re
 import json
 from setuptools import setup
 
-c = {'name':'todo',
+c = {'name':'tasks',
         'description':'',
         'url':'github.com/chuck1/todo',
         'author':'charles rymal',
@@ -11,23 +11,18 @@ c = {'name':'todo',
         'license':'',
         }
 
-with open(os.path.join(c['name'], '__init__.py')) as f:
-    version = re.findall("^__version__ = '(.*)'", f.read())[0]
 
 kwargs = {
         'name': 'todo',
-        'version': version,
+        'version': '0.1',
         'description': c['description'],
         'url': c['url'],
         'author': c['author'],
         'author_email': c['author_email'],
         'license': c['license'],
-        'packages': ['todo'],
+        'packages': ['tasks'],
         'zip_safe': False,
         'install_requires': [
-            'crayons',
-            'pytz',
-            'pymongo',
             ],
         }
 
