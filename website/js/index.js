@@ -5,27 +5,78 @@ var myApp = window.myApp || {};
 class ViewTasksList {
 	constructor(root, tasks) {
 		this.root = root;
-
-		this.tasks = {};
-
-		Object.values(tasks).forEach(function(task) {
-			this.tasks[task["_id"]] = new Task(task);
-		}, this);
+		this.tasks = tasks;
 	}
 	load()
 	{
 		$("#divTasks").show();
 		//$("#divTaskCreate").show();
 
-		// clear list
-		$("#divTasks div").remove();
+		var div = $("#divTasks");
+		
+		div.empty();
+
+		var div_lists = $("<div>");
+		
 
 		// clear select element
 		$("#formCreateInputParent option").remove();
 
 		//resetParentSelect($("#formCreateInputParent"), null);
 
-		create_lists($("#divTasks"), this.tasks, 0);
+		// create navigate up button
+		if(this.root != null) {
+			var button = $("<button>");
+			button.text("up");
+			button.click((ev) => {
+				var p = treeGetBranch(myApp.tasks, this.root.task['parent']);
+				console.log(p);
+
+				if(p == null) {
+					load_view_tasks_lists(null, myApp.tasks);
+				} else {
+					load_view_tasks_lists(p, p.children);
+				}
+			});
+			div.append(button);
+		}
+		
+		div.append(div_lists);
+
+		// create lists
+		this.create_lists(div_lists, this.tasks);
+	}
+	create_lists(container, tasks)
+	{
+		console.log('create lists');
+		console.log(tasks);
+
+		tasks_to_array(tasks).forEach(function(task) {
+			create_list(container, task, 0);
+		});
+
+		this.create_list_form(container);
+	}
+	create_list_form(container)
+	{
+		var div = $("<div>");
+		div.addClass('tasks_list');
+
+		var input = $('<input type="text">');
+		var button = $('<button>save</button>');
+
+		var parent_id = null;
+		if(this.root != null) {
+			parent_id = this.root.task['_id'];
+		}
+
+		button.click((ev) => {
+			taskCreate(input.val(), null, parent_id);
+		});
+
+		div.append(input);
+		div.append(button);
+		container.append(div);
 	}
 }
 
@@ -33,30 +84,31 @@ var view = null;
 
 var authToken;
 
-myApp.authToken.then(function setAuthToken(token) {
-	if (token) {
-		myApp.authToken = token;
-	} else {
+myApp.authToken.then(
+	function setAuthToken(token) {
+		if (token) {
+			myApp.authToken = token;
+		} else {
+			window.location.href = '/signin.html';
+		}
+	}).catch(function handleTokenError(error) {
+		alert(error);
 		window.location.href = '/signin.html';
-	}
-}).catch(function handleTokenError(error) {
-	alert(error);
-	window.location.href = '/signin.html';
-});
-function process_received_tasks(tasks)
-{
-	myApp.tasks = {};
-
-	Object.values(tasks).forEach(function(task) {
-		myApp.tasks[task["_id"]] = new Task(task);
 	});
+function receive_view_tasks_lists(data) {
+	var tasks = {};
+
+	Object.values(data.tasks).forEach(function(task) {
+		tasks[task["_id"]] = new Task(task);
+	}, this);
+	
+	// store so we can later navigate to root
+	myApp.tasks = tasks;
+
+	load_view_tasks_lists(data.root, tasks);
 }
-function receive_view_tasks_list(data) {
-	load_view_tasks_list(data.root, data.tasks);
-}
-function load_view_tasks_list(root, tasks) {
+function load_view_tasks_lists(root, tasks) {
 	view = new ViewTasksList(root, tasks);
-	//process_received_tasks(tasks);
 	view.load();
 }
 function taskCreate(title, due, parent_id) {
@@ -72,7 +124,7 @@ function taskCreate(title, due, parent_id) {
 			console.log('Response:');
 			console.log(result);
 
-			receive_view_tasks_list(result[0]);
+			receive_view_tasks_lists(result[0]);
 		},
 		function ajaxError(jqXHR, textStatus, errorThrown) {
 			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -92,7 +144,7 @@ function tasks_view_list(root_task_id) {
 			console.log('Response:');
 			console.log(result);
 
-			receive_view_tasks_list(result[0]);
+			receive_view_tasks_lists(result[0]);
 		},
 		function ajaxError(jqXHR, textStatus, errorThrown) {
 			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -128,23 +180,7 @@ function treeGetBranch(tree, task_id)
 	}
 	return null;
 }
-function create_list_form(container)
-{
-	var div = $("<div>");
-	div.addClass('tasks_list');
-	
-	var input = $('<input type="text">');
-	var button = $('<button>save</button>');
-	
-	button.click((ev) => {
-		taskCreate(input.val(), null, null);
-	});
-
-	div.append(input);
-	div.append(button);
-	container.append(div);
-}
-function create_list(container, task, level)
+function create_list(container, task)
 {
 	console.log('create list');
 
@@ -234,19 +270,6 @@ function tasks_to_array(tasks) {
 	});
 
 	return arr;
-}
-function create_lists(container, tasks, level)
-{
-	console.log('create lists');
-	console.log(tasks);
-
-	tasks_to_array(tasks).forEach(function(task) {
-		create_list(container, task, level);
-
-		//dd_tasks_to_list(container, task.children, level + 1);
-	});
-
-	create_list_form(container);
 }
 function taskDeleteCurrent() {
 	taskDelete(myApp.taskCurrent);
@@ -367,8 +390,22 @@ function create_task_detail_modal(task) {
 	var div = $("<div>");
 	div.addClass("task_detail");
 	div.addClass("modal-content");
+	
+	// controls
+	var div_controls = $("<div>");
 
-	var form = $("<form id=\"formTaskEdit\">");
+	var button_list_view = $("<button>");
+	button_list_view.text("go to lists view");
+	button_list_view.click((ev) => {
+		outer.css('display', 'none');
+		load_view_tasks_lists(task, task.children);
+	});
+	
+	div_controls.append(button_list_view);
+	div.append(div_controls);
+
+	// update form
+	var form = $("<form>");
 	
 	var table = $("<table>");
 	table.append("<tr><td>Title: <input type=\"text\" id=\"title\"></input></td></tr>");
@@ -380,6 +417,7 @@ function create_task_detail_modal(task) {
 	form.append(table);
 	div.append(form);
 	
+	// status
 	div.append("Status: <span id=\"status\"></span><br>");
 	div.append("<button id=\"complete\">complete</button><br>");
 	div.append("<button id=\"cancelled\">cancelled</button><br>");
