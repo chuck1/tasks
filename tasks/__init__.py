@@ -32,8 +32,8 @@ def stringize_field(task, name):
         task[name] = str(task[name])
 
 def SafeChild(task):
-    print("SafeChild")
-    print(task)
+    #print("SafeChild")
+    #print(task)
     return {
         "id": str(task["id"]),
         "due_last": datetimeToString(task["due_last"])
@@ -50,7 +50,7 @@ def SafePost(session, post):
 
 def safeTask(task):
     
-    print(task)
+    #print(task)
  
     def func_due_elem(elem):
         elem['value'] = datetimeToString(elem["value"])

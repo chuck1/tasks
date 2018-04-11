@@ -71,9 +71,9 @@ class Session:
         if parent_id is not None:
             parent_id = bson.objectid.ObjectId(parent_id)
 
-        print("Create task")
-        print(due)
-        print(due_utc)
+        #print("Create task")
+        #print(due)
+        #print(due_utc)
 
         t = {
                 'title': title,
@@ -133,8 +133,8 @@ class Session:
         for elem in vc:
             t = _get_task(elem["_id"])
             
-            print("elem[\"children\"]")
-            print(elem["children"])
+            #print("elem[\"children\"]")
+            #print(elem["children"])
 
             t["children"] = dict((child["id"], _get_task(child["id"])) for child in elem["children"])
        
