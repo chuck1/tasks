@@ -50,13 +50,17 @@ def SafePost(session, post):
 
 def safeTask(task):
     
+    assert task is not None
+
     #print(task)
  
     def func_due_elem(elem):
-        elem['value'] = datetimeToString(elem["value"])
+        #elem['value'] = 
+        return datetimeToString(elem["value"])
 
     def func_status_elem(elem):
-        elem["value"] = Status(elem["value"]).name
+        #elem["value"] = 
+        return Status(elem["value"]).name
    
     return {
             "_id": str(task["_id"]),
@@ -68,8 +72,8 @@ def safeTask(task):
             "parent": str(task.get("parent", None)),
             "due": [func_due_elem(elem) for elem in task["due"]],
             "status": [func_status_elem(elem) for elem in task["status"]],
-            "due_last": datetimeToString(task["due_last"]),
-            "status_last": Status(task["status_last"]).name,
+            "due_last": datetimeToString(task.due),
+            "status_last": Status(task.status).name,
             "children": dict((str(id_), safeTask(child)) for id_, child in task.get("children", {}).items()),
             "posts": list(task.posts()),
             }

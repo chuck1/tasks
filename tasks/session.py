@@ -16,6 +16,8 @@ from .todo_datetime import *
 from .status import *
 import tasks.task
 
+def breakpoint(): import pdb;pdb.set_trace();
+
 class Session:
     """
     elements of the task record
@@ -83,7 +85,8 @@ class Session:
                 'status': [{"value": Status.NONE.value},],
                 'parent': parent_id,
                 }
-    
+        
+
         res = self.db.tasks.insert_one(t)
 
         item = self.db.tasks.find_one(res.inserted_id)

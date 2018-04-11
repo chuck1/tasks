@@ -71,25 +71,24 @@ function getSubtreeOrRoot(task_id)
 		return treeGetSubtree(myApp.tasks, task_id);
 	}
 }
-function handleFormTaskEdit(event)
+function handleFormTaskEdit(event, task, input_title, input_due)
 {
 	console.log("handle task edit");
 
 	event.preventDefault();
 
-	task = myApp.taskCurrent;
-
-	title = $("#divTaskDetail #title").val();
+	title = input_title.val();
 	
-	due = $("#divTaskDetail #due").val();
+	due = input_due.val();
+
 	if(due == "") due = null;
 
-	parent_id = $("#divTaskDetail #parent").val();
-	var isContainer = $("#divTaskDetail #isContainer").prop("checked");
+	//parent_id = $("#divTaskDetail #parent").val();
+	//var isContainer = $("#divTaskDetail #isContainer").prop("checked");
 
 	commands = [];
 
-	if(isContainer != task.task["isContainer"])
+	if(false) //if(isContainer != task.task["isContainer"])
 	{
 		task.task["isContainer"] = isContainer;
 
@@ -99,6 +98,7 @@ function handleFormTaskEdit(event)
 			"isContainer": isContainer
 		});
 	}
+
 	if(title != task.task["title"])
 	{
 		task.task["title"] = title;
@@ -115,13 +115,15 @@ function handleFormTaskEdit(event)
 		console.log(task.task["due_last"]);
 		console.log(due);
 		
+		task.task["due_last"] = due;
+
 		commands.push({
 			"command": "update_due",
 			"task_id": task.task["_id"],
 			"due": due
 		});
 	}
-	if(parent_id != task.task["parent"])
+	if(false) //if(parent_id != task.task["parent"])
 	{
 		console.log("parent changed");
 		console.log(task.task["parent"]);
@@ -143,9 +145,13 @@ function handleFormTaskEdit(event)
 			"parent_id_str": parent_id
 		});
 	}
+	
+	
 
 	if(commands.length > 0)
 	{
+		view.load();
+
 		callAPI(
 			commands,
 			function(result){

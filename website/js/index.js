@@ -95,7 +95,8 @@ myApp.authToken.then(
 		alert(error);
 		window.location.href = '/signin.html';
 	});
-function receive_view_tasks_lists(data) {
+
+function process_tasks(data) {
 	var tasks = {};
 
 	Object.values(data.tasks).forEach(function(task) {
@@ -105,6 +106,10 @@ function receive_view_tasks_lists(data) {
 	// store so we can later navigate to root
 	myApp.tasks = tasks;
 
+	return tasks;
+}
+function receive_view_tasks_lists(data) {
+	var tasks = process_tasks(data);
 	load_view_tasks_lists(data.root, tasks);
 }
 function load_view_tasks_lists(root, tasks) {
@@ -112,6 +117,9 @@ function load_view_tasks_lists(root, tasks) {
 	view.load();
 }
 function taskCreate(title, due, parent_id) {
+	console.log('create task');
+
+
 	callAPI(
 		[{
 			"command": "create",
@@ -124,7 +132,24 @@ function taskCreate(title, due, parent_id) {
 			console.log('Response:');
 			console.log(result);
 
-			receive_view_tasks_lists(result[0]);
+			//receive_view_tasks_lists(result[0]);
+			var data = result[0];
+
+			var task = new Task(data.task);
+
+			var b = treeGetBranch(myApp.tasks, parent_id);
+
+			console.log(b);
+
+			if(b != null) {
+				b.children[task.task['_id']] = task;
+				b.task['children'][task.task['_id']] = task;
+			} else {
+				myApp.tasks[task.task['_id']] = task;
+			}
+
+			view.load();
+
 		},
 		function ajaxError(jqXHR, textStatus, errorThrown) {
 			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -180,12 +205,77 @@ function treeGetBranch(tree, task_id)
 	}
 	return null;
 }
+function datetime_easy_read(datetime, now) {
+
+	d = datetime - now;
+
+	weekdays = ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'];
+	months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+	weekday = weekdays[datetime.getDay()];
+	month = months[datetime.getMonth()];
+
+	var ms_per_day = 1000 * 60 * 60 * 24;
+
+	var time_string = `${datetime.getHours().toString().padStart(2,'0')}:${datetime.getMinutes().toString().padStart(2,'0')}`;
+
+	datetime_to_date = (a) => {
+		return new Date(a.getFullYear(), a.getMonth(), a.getDate());
+	};
+	
+	var date = datetime_to_date(datetime);
+	var tomorrow_date = datetime_to_date(new Date(now.valueOf() + ms_per_day));
+	var now_date = datetime_to_date(now);
+
+	if(d > 0) {
+		if(date.valueOf() == now_date.valueOf()) {
+			return time_string;
+		}
+		
+		if(date.valueOf() == tomorrow_date.valueOf())
+		{
+			return `Tomorrow ${time_string}`;
+		}
+
+		if(d < ms_per_day * 7) {
+			return `${weekday} ${time_string}`;
+		}
+	}
+
+	return `${weekday} ${month} ${datetime.getDate()}`
+}
+function datetime_div(date) {
+	var div = $("<div>");
+	
+	var now = new Date();
+
+	div.text(datetime_easy_read(date, now));
+
+	div.addClass('datetime');
+
+	d = date - now;
+	
+	// less than one day - red
+	// less than three days - yellow
+	// otherwise - no color
+	
+	var day = 1000 * 60 * 60 * 24;
+
+	if(d < day) {
+		div.addClass('red');
+	} else if(d < day * 3) {
+		div.addClass('yellow');
+	} else {
+	}
+
+	return div;
+}
 function create_list(container, task)
 {
-	console.log('create list');
+	//console.log('create list');
 
 	if(!task.should_display()) {
-		console.log('should not display');
+		//console.log('should not display');
 		return;	
 	}
 
@@ -202,6 +292,12 @@ function create_list(container, task)
 
 	div.append(div_title);
 
+	// due datetime
+	var due = task.due();
+	if(due != null) {
+		div.append(datetime_div(due));
+	}
+
 	container.append(div);
 
 
@@ -215,17 +311,109 @@ function create_list(container, task)
 		child_div.click((ev) => {
 			create_task_detail_modal(child);
 		});
+
+		// due datetime
+		var due = child.due();
+		if(due != null) {
+			child_div.append(datetime_div(due));
+		}
+		
+		// draggable
+		child_div.draggable({
+			revert: (dropped) => {
+				if(dropped == false) return true;
+
+				if(!dropped.hasClass('tasks_list_item')) return true;
+				if(!dropped.hasClass('drop')) return true;
+				
+				var task_dropped = dropped.data('task');
+
+				if(task_dropped == null) {
+					return true;
+				}
+
+				if(dropped.data('task').task['_id'] == child.task['parent']) {
+					console.log('dropped into own parent, revert');
+					return true;
+				}
+
+				return false;
+			}
+		});
+
+		// data
+		child_div.data('task', child);
 		
 		div.append(child_div);
 	});
 
+	var div_child_drop = $("<div>");
+	div_child_drop.addClass('tasks_list_item');
+	div_child_drop.addClass('drop');
+	div_child_drop.data('task', task);
+	div_child_drop.droppable({
+		classes: {},
+		drop: (ev, ui) => {
+			var task_dragged = ui.draggable.data('task')
+			console.log('dragged "' + task_dragged.task['title'] + '" into "' + task.task['title'] + '"');
 
-	return;
+			if(task_dragged.task['parent'] == task.task['_id']) {
+				console.log('dropped into own parent, do nothing');
+				return;
+			}
 
-	var div_due = $("<div class=\"col due\">");
+			move_task(task_dragged, task.task['_id']);
+		}
+	});
+	
+	/* not working, these events arent fired while dragging
+	 
+	div_child_drop.hide();
+	
+	div.mouseenter((ev) => {
+		div_child_drop.show();
+	}).mouseleave((ev) => {
+		div_child_drop.hide();
+	});
+	*/
+
+	div.append(div_child_drop);
+
+	/*
 	var div_status = $("<div class=\"col status\">");
-	div_due.html(format_date(task.due()) + "&nbsp;");
 	div_status.html(task.task["status_last"]);
+	*/
+}
+function move_task(task, new_parent_id) {
+	console.log('move task');
+
+	if(task.task['_id'] == new_parent_id) {
+		console.log('cannot be own parent!');
+		return;
+	}
+
+	var tree1 = getSubtreeOrRoot(task.task["parent"]);
+	var tree2 = getSubtreeOrRoot(new_parent_id);
+
+	console.log(tree1);
+	console.log(tree2);
+
+	task.task["parent"] = new_parent_id;
+
+	moveTask(task.task["_id"], tree1, tree2);
+	
+	view.load();
+
+	callAPI(
+		[{
+			"command": "update_parent",
+			"task_id": task.task["_id"],
+			"parent_id_str": new_parent_id
+		}],
+		function(response) {
+			console.log("response:", response);
+		},
+		defaultAjaxError);
 }
 function format_date(date)
 {
@@ -298,6 +486,14 @@ function taskUpdateStatusCurrent(status_string)
 }
 function taskUpdateStatus(task, status_string)
 {
+	console.log('update status');
+	console.log(task);
+	console.log(status_string);
+
+	task.task["status_last"] = status_string;
+
+	view.load();
+
 	callAPI(
 		[{
 			"command": "update_status",
@@ -309,9 +505,6 @@ function taskUpdateStatus(task, status_string)
 
 			// if success
 
-			$("#divTaskDetail #status").html(status_string);
-
-			task.task["status_last"] = status_string;
 		},
 		function ajaxError(jqXHR, textStatus, errorThrown) {
 			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -405,22 +598,67 @@ function create_task_detail_modal(task) {
 	div.append(div_controls);
 
 	// update form
-	var form = $("<form>");
 	
+	var append_row = (table, el) => {
+		var td = $("<td>");
+		var tr = $("<tr>");
+		td.append(el);
+		tr.append(td)
+		table.append(tr);
+	};
+
 	var table = $("<table>");
-	table.append("<tr><td>Title: <input type=\"text\" id=\"title\"></input></td></tr>");
-	table.append("<tr><td>Due: <input type=\"text\" id=\"due\"></input></td></tr>");
+	
+	// title
+	
+	var div_title = $("<div>Title: </div>");
+	var input_title = $("<input type=\"text\"></input>");
+	input_title.val(task.task['title']);
+	div_title.append(input_title);
+
+	append_row(table, div_title);
+
+	// due
+
+	var div_due = $("<div>Due: </div>");
+	var input_due = $("<input type=\"text\"></input>");
+	input_due.val(task.task['due_last']);
+	div_due.append(input_due);
+
+	append_row(table, div_due);
+	
+	// the rest
+
 	table.append("<tr><td>Parent: <select id=\"parent\"></select></td></tr>");
 	table.append("<tr><td>Is container: <input type=\"checkbox\" id=\"isContainer\"></td></tr>");
-	table.append("<tr><td><input type=\"submit\" value=\"Update\"></td></tr>");
 	
-	form.append(table);
-	div.append(form);
+	// save button
+	
+	var button_save = $("<button>Update</button>");
+
+	button_save.click((ev) => {
+		handleFormTaskEdit(ev, task, input_title, input_due);
+	});
+
+	append_row(table, button_save);
+
+	div.append(table);
 	
 	// status
 	div.append("Status: <span id=\"status\"></span><br>");
-	div.append("<button id=\"complete\">complete</button><br>");
-	div.append("<button id=\"cancelled\">cancelled</button><br>");
+	
+	// complete
+	var button_complete = $("<button id=\"complete\">complete</button>");
+	
+	button_complete.click(function() {
+		taskUpdateStatus(task, "COMPLETE");
+		outer.css('display', 'none');
+	});
+
+	div.append(button_complete);
+	div.append('<br>');
+
+	//div.append("<button id=\"cancelled\">cancelled</button><br>");
 	
 	// delete	
 	var button_delete = $("<button>delete</button>");
@@ -476,16 +714,13 @@ $(function onDocReady() {
 	tasks_view_list(root_task_id);
 
 	$('#formCreate').submit(handleFormCreate);
-	$('#formTaskEdit').submit(handleFormTaskEdit);
+	//$('#formTaskEdit').submit(handleFormTaskEdit);
 
 	$("#form_post form").submit(handleFormPost);
 
 	$('#divTaskEditTaskCreate form').submit(function(event) {
 		event.preventDefault();
 		handleFormTaskEditTaskCreate(event)
-	});
-	$("#divTaskDetail #complete").click(function(){
-		taskUpdateStatusCurrent("COMPLETE");
 	});
 	$("#divTaskDetail #cancelled").click(function(){
 		taskUpdateStatusCurrent("CANCELLED");

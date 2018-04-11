@@ -5,6 +5,9 @@ import pytz
 
 import tasks.session
 
+def breakpoint():
+    import pdb;pdb.set_trace();
+
 def taskList(session, body):
     #tree = session.tree(session.task_view_default())
     #return tasks.safeDict(tree.tree)
@@ -29,12 +32,16 @@ def taskCreate(session, body):
     else:
         parent_id = None
     
-    session.task(
+    task = session.task(
             body["title"], 
             due,
             parent_id, )
 
-    return taskList(session, None)
+    assert task is not None
+
+    res = {'task': tasks.safeTask(task)}
+
+    return res
 
 def taskUpdateDue(session, body):
     task_id = body["task_id"]
@@ -143,11 +150,25 @@ def test1():
     res = _test_lambda([{"command": "list"}])
 
     print(res['body'])
+    
+    data = json.loads(res['body'])[0]
 
-    task_list = json.loads(res['body'])[0]
+    task_list = data['tasks']
 
     for task_id, t in task_list.items():
         print(t['title'])
+
+def test3():
+    res = _test_lambda([{
+			"command": "create",
+			"title": "test",
+			"due": None,
+			"parent_id": None
+        }])
+
+    data = json.loads(res['body'])[0]
+    print(data)
+
 
 def test2(session):
     print('test2')
@@ -156,9 +177,10 @@ def test2(session):
 
     print(res)
 
-    
 
 def test():
+    test3()
+    return
     test1()
     
     session = tasks.session.Session('charlesrymal-at-gmail.com')
