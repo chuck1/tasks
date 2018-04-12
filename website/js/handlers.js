@@ -76,6 +76,8 @@ function getSubtreeOrRoot(task_id)
 {
 	if(task_id == "None") {
 		return myApp.tasks;
+	} else if(task_id == null) {
+		return myApp.tasks;
 	} else {
 		return treeGetSubtree(myApp.tasks, task_id);
 	}

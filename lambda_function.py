@@ -143,7 +143,12 @@ def print_dict(d, level):
         print("-"*level + str(id_))
         print_dict(t.get("children", {}), level+1)
 
-def _test_lambda(body):
+def _test_lambda(commands, database='test'):
+    body = {
+            'commands': commands,
+            'database': database,
+            }
+
     res = lambda_handler({
         "body": json.dumps(body),
         "requestContext": {"authorizer": {"claims": {'cognito:username': 'charlesrymal-at-gmail.com'}}}}, {})
@@ -151,11 +156,15 @@ def _test_lambda(body):
     return res
 
 def test1():
-    res = _test_lambda([{"command": "list"}])
+    res = _test_lambda([{"command": "list"}], 'todo_database')
 
     print(res['body'])
     
     data = json.loads(res['body'])[0]
+    
+    print()
+    print(data)
+    print()
 
     task_list = data['tasks']
 
@@ -184,10 +193,9 @@ def test2(session):
 
 def test():
     test3()
-    return
     test1()
     
-    session = tasks.session.Session('charlesrymal-at-gmail.com')
+    session = tasks.session.Session('test', 'charlesrymal-at-gmail.com')
 
     test2(session)
 

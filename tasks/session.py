@@ -135,20 +135,21 @@ class Session:
         
         def _get_task(id_):
             if id_ not in flat.keys():
-                task = self.db.tasks.find_one({'_id': elem["_id"]})
-                #task['due_last'] = task['due'][-1]['value']
-                #task['status_last'] = task['status'][-1]['value']
-                    
-                flat[id_] = Task(self, task)
+                task = self.db.tasks.find_one({'_id': id_})
+                
+                if task is None:
+                    return
+
+                flat[id_] = tasks.task.Task(self, task)
             
             return flat[id_]
 
         for elem in vc:
             t = _get_task(elem["_id"])
-            
-            #print("elem[\"children\"]")
-            #print(elem["children"])
 
+            if t is None:
+                continue
+            
             t["children"] = dict((child["id"], _get_task(child["id"])) for child in elem["children"])
        
         for t in flat.values():

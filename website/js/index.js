@@ -7,6 +7,53 @@ class ViewTasksList {
 		this.root = root;
 		this.tasks = tasks;
 	}
+	create_root_info()
+	{
+		console.log('root info');
+		console.log(this.root);
+
+		var div = $("<div>");
+
+		// title
+		
+		var title = $("<h1>");
+
+		if(this.root != null) {
+			title.text(this.root.task['title']);
+		} else {
+			title.text('root');
+		}
+
+		div.append(title);
+
+		// navigate up button
+			
+		if(this.root != null) {
+			var root_parent = this.root.task['parent'];
+			console.log('root parent id', root_parent);
+			var p = treeGetBranch(myApp.tasks, root_parent);
+			console.log('root parent', p);
+
+			var button = $("<button>");
+			button.text("up");
+			button.click((ev) => {
+				console.log(p);
+
+				if(p == null) {
+					load_view_tasks_lists(null, myApp.tasks);
+				} else {
+					load_view_tasks_lists(p, p.children);
+				}
+			});
+			div.append(button);
+		}
+
+		// droppable
+		
+		div.append(create_droppable(this.root));
+
+		return div;
+	}
 	load()
 	{
 		$("#divTasks").show();
@@ -24,21 +71,10 @@ class ViewTasksList {
 
 		//resetParentSelect($("#formCreateInputParent"), null);
 
-		// create navigate up button
-		if(this.root != null) {
-			var button = $("<button>");
-			button.text("up");
-			button.click((ev) => {
-				var p = treeGetBranch(myApp.tasks, this.root.task['parent']);
-				console.log(p);
-
-				if(p == null) {
-					load_view_tasks_lists(null, myApp.tasks);
-				} else {
-					load_view_tasks_lists(p, p.children);
-				}
-			});
-			div.append(button);
+		
+		var div_root = this.create_root_info();
+		if(div_root != null) {
+			div.append(div_root);
 		}
 		
 		div.append(div_lists);
@@ -124,6 +160,7 @@ function receive_view_tasks_lists(data) {
 	load_view_tasks_lists(data.root, tasks);
 }
 function load_view_tasks_lists(root, tasks) {
+	console.log('load_view_tasks_lists', root);
 	view = new ViewTasksList(root, tasks);
 	view.load();
 }
@@ -208,7 +245,7 @@ function treeGetBranch(tree, task_id)
 
 			if(task_id1 == task_id) return branch;
 			
-			branch = treeGetBranch(branch["tree"], task_id);
+			branch = treeGetBranch(branch.children, task_id);
 
 			if(branch) return branch;
 		}
@@ -280,6 +317,42 @@ function datetime_div(date) {
 
 	return div;
 }
+function create_droppable(task)
+{
+	// task - the task to become the new parent
+
+	var div_drop = $("<div>");
+	div_drop.addClass('tasks_list_item');
+	div_drop.addClass('drop');
+	div_drop.data('task', task);
+	
+	var parent_id = null;
+	if(task != null) {
+		parent_id = task.task['_id'];
+	}
+
+	div_drop.droppable({
+		classes: {},
+		drop: (ev, ui) => {
+			var task_dragged = ui.draggable.data('task')
+
+			if(task != null) {
+				console.log('dragged "' + task_dragged.task['title'] + '" into "' + task.task['title'] + '"');
+			} else {
+				console.log('dragged "' + task_dragged.task['title'] + '" into root');
+			}
+
+			if(task_dragged.task['parent'] == parent_id) {
+				console.log('dropped into own parent, do nothing');
+				return;
+			}
+
+			move_task(task_dragged, parent_id);
+		}
+	});
+	
+	return div_drop;
+}
 function create_list(container, task)
 {
 	//console.log('create list');
@@ -291,6 +364,30 @@ function create_list(container, task)
 
 	var div = $("<div>");
 	div.addClass('tasks_list');
+	div.data('task', task);	
+
+	// draggable
+	div.draggable({
+		revert: (dropped) => {
+			if(dropped == false) return true;
+
+			if(!dropped.hasClass('tasks_list_item')) return true;
+			if(!dropped.hasClass('drop')) return true;
+
+			var task_dropped = dropped.data('task');
+
+			if(task_dropped == null) {
+				return true;
+			}
+
+			if(dropped.data('task').task['_id'] == task.task['parent']) {
+				console.log('dropped into own parent, revert');
+				return true;
+			}
+
+			return false;
+		}
+	});
 
 	var div_title = $("<div>");
 	div_title.addClass('title');
@@ -309,7 +406,6 @@ function create_list(container, task)
 	}
 
 	container.append(div);
-
 
 	tasks_to_array(task.children).forEach(function(child) {
 		if(!child.should_display()) {
@@ -375,7 +471,6 @@ function create_list(container, task)
 	div_child_form.append(input);
 	div_child_form.append(button);
 	div.append(div_child_form);
-
 
 	// droppable
 
