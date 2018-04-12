@@ -25,6 +25,12 @@ div.tasks_list {
 div.tasks_list div.title {
 	font-weight: bold;
 }
+div.tasks_list input {
+	width: 100px;
+}
+div.tasks_list_item input {
+	width: 100px;
+}
 div.tasks_list_item {
 	margin: 5px;
 	margin-top: 10px;

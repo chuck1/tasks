@@ -96,6 +96,17 @@ myApp.authToken.then(
 		window.location.href = '/signin.html';
 	});
 
+function getParameterByName(name, url)
+{
+	if (!url) url = window.location.href;
+	name = name.replace(/[\[\]]/g, "\\$&");
+	var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+		results = regex.exec(url);
+	if (!results) return null;
+	if (!results[2]) return '';
+	return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
 function process_tasks(data) {
 	var tasks = {};
 
@@ -118,7 +129,6 @@ function load_view_tasks_lists(root, tasks) {
 }
 function taskCreate(title, due, parent_id) {
 	console.log('create task');
-
 
 	callAPI(
 		[{
@@ -302,6 +312,9 @@ function create_list(container, task)
 
 
 	tasks_to_array(task.children).forEach(function(child) {
+		if(!child.should_display()) {
+			return;	
+		}
 
 		var child_div = $("<div>");
 		child_div.addClass('tasks_list_item');
@@ -346,6 +359,25 @@ function create_list(container, task)
 		
 		div.append(child_div);
 	});
+
+	// create task form
+
+	var div_child_form = $("<div>");
+	div_child_form.addClass('tasks_list_item');
+
+	var input = $('<input type="text">');
+	var button = $('<button>save</button>');
+
+	button.click((ev) => {
+		taskCreate(input.val(), null, task.task['_id']);
+	});
+
+	div_child_form.append(input);
+	div_child_form.append(button);
+	div.append(div_child_form);
+
+
+	// droppable
 
 	var div_child_drop = $("<div>");
 	div_child_drop.addClass('tasks_list_item');

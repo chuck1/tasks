@@ -119,8 +119,12 @@ def lambda_handler(event, context):
     try:
         body = json.loads(event["body"])
         username = event["requestContext"]["authorizer"]["claims"]['cognito:username']
-        session = tasks.session.Session(username)
-        responseBody = json.dumps([processBody(event, session, b) for b in body])
+
+        session = tasks.session.Session(body['database'], username)
+        
+        commands = body['commands']
+
+        responseBody = json.dumps([processBody(event, session, b) for b in commands])
         
         return {
             "statusCode": 200,

@@ -45,17 +45,23 @@ class Session:
             "posts",
             ]
 
-    def __init__(self, username):
+    def __init__(self, db_name, username):
         if 'MONGO_URI' in os.environ:
             client = pymongo.MongoClient(os.environ['MONGO_URI'])
         else:
             raise RuntimeError()
             client = pymongo.MongoClient()
             warnings.warn("using local mongo server")
-
-        self.db = client.todo_database
+        
+        self.db = client[db_name] #todo_database
 
         self.user = self.db.users.find_one({'username':username})
+        
+        if self.user is None:
+            self.db.users.insert_one({'username':username})
+        
+        self.user = self.db.users.find_one({'username':username})
+
         assert self.user is not None
 
     def task(self, title, due=None, parent_id=None):

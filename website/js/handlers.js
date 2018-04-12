@@ -10,13 +10,22 @@ function defaultAjaxError(jqXHR, textStatus, errorThrown) {
 function callAPI(data, onSuccess, onFailure) {
 	console.log("callAPI");
 	console.log(data);
+
+	db_name = getParameterByName('database')
+	console.log('database', db_name)
+
+	data1 = {
+		commands: data,
+		database: db_name,
+	}
+
 	$.ajax({
 		method: 'POST',
 		url: _config.api.invokeUrl + '/tasks',
 		headers: {
 			Authorization: myApp.authToken
 		},
-		data: JSON.stringify(data),
+		data: JSON.stringify(data1),
 		contentType: 'application/json',
 		success: onSuccess,
 		error: onFailure
