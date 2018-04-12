@@ -571,17 +571,48 @@ function format_date(date)
 
 	return ret;
 }
+function compare_int(a, b) {
+	var c = 0;
+	if(a < b) { c = -1; }
+	if(b > a) { c = 1; }
+	console.log(a, b, a - b, c);
+	return 0;
+}
+function compare(a, b) {
+	var c = 0;
+	if(a < b) { c = -1; }
+	if(b < a) { c = 1; }
+	//console.log('compare', typeof a, typeof b);
+	//console.log(a, b, a - b, c);
+	return 0;
+}
 function tasks_to_array(tasks) {
 	var arr = Object.values(tasks);
 
 	arr.sort(function(a, b) {
 		d1 = a.due();
 		d2 = b.due();
-		if(d1 == null) return 1;
-		if(d2 == null) return -1;
-		if(d1 < d2) return -1;
-		if(d1 > d2) return 1;
-		return 0;
+
+		//console.log('sort');
+		//console.log(d1);
+		//console.log(d2);
+
+		if((d1 != null) || (d2 != null)) {
+			if(d1 == null) return 1;
+			if(d2 == null) return -1;
+
+			var c = compare(d1.valueOf(), d2.valueOf());
+			//console.log('compare', c);
+			if(c != 0) {
+				console.log('sort by date', c);
+				return c;
+			}
+		}
+
+		c = compare(a.task['title'], b.task['title']);
+		if(c != 0) return c;
+
+		return compare(a.task['_id'], b.task['_id']);
 	});
 
 	return arr;
