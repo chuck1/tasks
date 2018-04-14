@@ -1,6 +1,7 @@
 /*global myApp _config AmazonCognitoIdentity AWSCognito*/
 
 var myApp = window.myApp || {};
+var app = {};
 
 class ViewTasksList {
 	constructor(root, tasks) {
@@ -369,6 +370,8 @@ function create_list(container, task)
 	// draggable
 	div.draggable({
 		revert: (dropped) => {
+			app.dragging = null;
+
 			if(dropped == false) return true;
 
 			if(!dropped.hasClass('tasks_list_item')) return true;
@@ -385,8 +388,13 @@ function create_list(container, task)
 				return true;
 			}
 
+
 			return false;
-		}
+		},
+		start: () => {
+			app.dragging = div;
+
+		},
 	});
 
 	var div_title = $("<div>");
@@ -430,6 +438,8 @@ function create_list(container, task)
 		// draggable
 		child_div.draggable({
 			revert: (dropped) => {
+				app.dragging = null;
+
 				if(dropped == false) return true;
 
 				if(!dropped.hasClass('tasks_list_item')) return true;
@@ -447,7 +457,10 @@ function create_list(container, task)
 				}
 
 				return false;
-			}
+			},
+			start: () => {
+				app.dragging = child_div;
+			},
 		});
 
 		// data
@@ -504,7 +517,9 @@ function create_list(container, task)
 	});
 	*/
 
+	div.data('drop', div_child_drop);
 	div.append(div_child_drop);
+	div_child_drop.hide();
 
 	/*
 	var div_status = $("<div class=\"col status\">");
@@ -871,18 +886,72 @@ $(function onDocReady() {
 	var root_task_id = null;
 	tasks_view_list(root_task_id);
 
+	/*
 	$('#formCreate').submit(handleFormCreate);
 	//$('#formTaskEdit').submit(handleFormTaskEdit);
-
+	
 	$("#form_post form").submit(handleFormPost);
-
+	*/
+	/*
 	$('#divTaskEditTaskCreate form').submit(function(event) {
 		event.preventDefault();
 		handleFormTaskEditTaskCreate(event)
 	});
+	*/
+	/*
 	$("#divTaskDetail #cancelled").click(function(){
 		taskUpdateStatusCurrent("CANCELLED");
 	});
+	*/
+
+	var drag_enter = (el) => {
+		console.log('drag enter');
+		//el.css('background-color', 'red');
+		el.data('drop').show();
+	};
+	var drag_leave = (el) => {
+		console.log('drag leave');
+		//el.css('background-color', 'blue');
+		el.data('drop').hide();
+	};
+
+	window.addEventListener("mousemove", function(ev) {
+		if(app.dragging != null) {
+			//console.log(ev);
+				
+			var x = ev.pageX;
+			var y = ev.pageY;
+			
+			$(".tasks_list").each((index, el) => {
+				var o = $(el).offset();
+				
+				var _in = () => {
+					if(x < o.left) return false;
+					if(x > o.left + $(el).width()) return false;
+					if(y < o.top) return false;
+					if(y > o.top + $(el).height()) return false;
+					return true;
+				};
+				
+				if(_in()) {
+					if($(el).data('drag_hover')) {
+						// already in, do nothing
+					} else {
+						$(el).data('drag_hover', true);
+						drag_enter($(el));
+					}
+				} else {
+					if($(el).data('drag_hover')) {
+						$(el).data('drag_hover', false);
+						drag_leave($(el));
+					} else {
+						// already out, do nothing
+					}
+				}
+				
+			});
+		}
+	}, false);
 
 });
 

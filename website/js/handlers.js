@@ -8,9 +8,6 @@ function defaultAjaxError(jqXHR, textStatus, errorThrown) {
 }
 
 function callAPI(data, onSuccess, onFailure) {
-	console.log("callAPI");
-	console.log(data);
-
 	db_name = getParameterByName('database')
 	console.log('database', db_name)
 
@@ -18,6 +15,13 @@ function callAPI(data, onSuccess, onFailure) {
 		commands: data,
 		database: db_name,
 	}
+
+	url = _config.api.invokeUrl + '/tasks';
+
+	console.log("callAPI");
+	console.log(data1);
+	console.log('send to', url);
+	console.log(myApp.authToken);
 
 	$.ajax({
 		method: 'POST',
