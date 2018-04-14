@@ -17,7 +17,7 @@ div.tasks_lists {
 div.tasks_list {
 	margin: 5px;
 	padding: 5px;
-	width: 160px;
+	width: 200px;
 	float: left;
 	background-color: #cccccc;
 	border-radius: 3px;
@@ -70,9 +70,6 @@ div#divTaskDetail {
 }
 div.datetime {
 	border-radius: 3px;
-	font-family: Arial, Helvetica, sans-serif;
-	font-size: 0.9em;
-	padding: 2px;
 }
 div.datetime.red {
 	background-color: rgb(255, 0, 0);
@@ -94,52 +91,14 @@ textarea {
 	}
 }
 
-/*
-div.col {
-float: left;
+.indicators {
+	overflow: hidden;
 }
-div.col.due {
-width: 180px;
+.indicator {
+	float: left;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 0.9em;
+	color: rgb(50, 50, 50);
+	padding: 2px;
 }
-div.col.status {
-width: 100px;
-}
-div.col.edit {
-width: 80px;
-}
-div.col p {
-margin: 0;
-}
-div.col.title {
-width: 600px;
-word-wrap: break-word;
-}
-div.row div.detail {
-overflow: hidden;
-padding-left: 14px;
-}
-div.row div.row div.detail {
-padding-left: 7px;
-}
-div.row div.row div.row div.detail {
-padding-left: 0px;
-}
-div.row div.row {
-background-color: #CCCCCC;
-}
-div.row div.row div.row {
-background-color: #FFFFFF;
-}
-div.row div.list {
-/
-background-color: #CCCCCC;
-margin: 3px;
-padding-top: 1px;
-padding-bottom: 1px;
-border-radius: 5px;
-/
-}
- */
-
-
 
