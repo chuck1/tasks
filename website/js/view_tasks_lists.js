@@ -54,21 +54,16 @@ class ViewTasksList {
 	load()
 	{
 		$("#divTasks").show();
-		//$("#divTaskCreate").show();
 
 		var div = $("#divTasks");
 		
 		div.empty();
 
 		var div_lists = $("<div>");
-		
 
 		// clear select element
 		$("#formCreateInputParent option").remove();
 
-		//resetParentSelect($("#formCreateInputParent"), null);
-
-		
 		var div_root = this.create_root_info();
 		if(div_root != null) {
 			div.append(div_root);
