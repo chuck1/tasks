@@ -3,6 +3,18 @@ class Application
 {
 	constructor() {
 	}
+	get_root_tasks() {
+		var tasks = [];
+		console.log('app get root tasks', this.tasks.length);
+		for(var i = 0; i < this.tasks.length; i++) {
+			console.log(this.tasks[i].task['parent']);
+			var p = this.tasks[i].task['parent'];
+			if((p == null) || (p == 'None')) {
+				tasks.push(this.tasks[i]);
+			}
+		}
+		return tasks;
+	}
 	treeGetBranch(tree, task_id) {
 		for(var task_id1 in tree)
 		{
@@ -36,9 +48,9 @@ class Application
 				});
 
 				// store so we can later navigate to root
-				//myApp.tasks = tasks;
+				this.tasks = tasks;
 
-				resolve(tasks);
+				resolve();
 			};
 
 			callAPI(

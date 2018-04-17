@@ -15,6 +15,16 @@ class Task {
 
 		this.is_deleted = false;
 	}
+	get_children()
+	{
+		var tasks = [];
+		for(var i = 0; i < app.tasks.length; ++i) {
+			if(app.tasks[i].task['parent'] == this.task['_id']) {
+				tasks.push(app.tasks[i]);
+			}
+		}
+		return tasks;
+	}
 	should_display()
 	{	
 		if(this.is_deleted) return false;

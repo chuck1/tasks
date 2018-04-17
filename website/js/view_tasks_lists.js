@@ -1,16 +1,20 @@
 
-class ViewTasksList {
+class ViewTasksLists {
 	constructor(root_id) {
 		this.root_id = root_id;
 	}
 	refresh() {
-		get_tasks_list(this.filter_string).then((tasks) => {
-			this.tasks = tasks;
+		app.read_tasks('').then(() => {
 			this.load();
 		});
 	}
 	get_root() {
-		
+		if(this.root_id == null) return null;
+		for (var i = 0; i < app.tasks.length; i++) {
+			if(app.tasks[i].task['_id'] == this.root_id) {
+				return app.tasks[i];
+			}
+		}
 	}
 	create_root_info()
 	{
@@ -80,15 +84,27 @@ class ViewTasksList {
 		div.append(div_lists);
 
 		// create lists
-		this.create_lists(div_lists, this.tasks);
+		this.create_lists(div_lists);
 	}
-	create_lists(container, tasks)
+	create_lists(container)
 	{
 		console.log('create lists');
-		console.log(tasks);
+		
+		var root = this.get_root();
+		var tasks = null;
+		if(root == null) {
+			tasks = app.get_root_tasks();
+		} else {
+			tasks = root.get_children();
+		}
+		
+		sort_task_array(tasks);
 
-		tasks_to_array(tasks).forEach(function(task) {
-			create_list(container, task, 0);
+		console.log('root', root);
+		console.log('tasks', tasks);
+
+		tasks.forEach(function(task) {
+			create_list(container, task);
 		});
 
 		this.create_list_form(container);
@@ -294,7 +310,10 @@ function create_list(container, task)
 
 	container.append(div);
 
-	tasks_to_array(task.children).forEach(function(child) {
+	var children = task.get_children();
+	sort_task_array(children);
+
+	children.forEach(function(child) {
 		var child_div = create_list_item(child);
 		
 		div.append(child_div);

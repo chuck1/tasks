@@ -7,12 +7,12 @@ zip -r deployment.zip tasks
 cd env/lib/python3.6/site-packages
 
 zip -r $here/deployment.zip pymongo > /dev/null
-#zip -r $here/deployment.zip colorama
+zip -r $here/deployment.zip colorama
 zip -r $here/deployment.zip bson
 zip -r $here/deployment.zip pytz > /dev/null
 zip $here/deployment.zip crayons.py
 
-cp $here/deployment.zip /media/sf_Documents
+#cp $here/deployment.zip /media/sf_Documents
 
 cd $here
 

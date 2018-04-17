@@ -1,4 +1,3 @@
-/*global myApp _config AmazonCognitoIdentity AWSCognito*/
 
 var app = new Application();
 var view = null;
@@ -285,9 +284,6 @@ function tasks_to_array(tasks) {
 
 	return arr;
 }
-function taskDeleteCurrent() {
-	taskDelete(myApp.taskCurrent);
-}
 function taskDelete(task, on_delete) {
 	if(!confirm("Permanently delete task \"" + task.task["title"] + "\"?")) return;
 
@@ -536,7 +532,8 @@ function create_task_detail_modal(task) {
 	*/
 }
 function _load_view_tasks_lists() {
-	view = new ViewTasksLists();
+	view = new ViewTasksLists(null);
+	view.refresh();
 
 	var drag_enter = (el) => {
 		console.log('drag enter');
