@@ -8,71 +8,76 @@ import tasks.session
 def breakpoint():
     import pdb;pdb.set_trace();
 
-def task_list(session, body):
+class Handler:
 
-    if body['filter_string']:
-        filt = json.loads(body['filter_string'])
-    else:
-        filt = {}
-
-    res = {
-            'tasks': [tasks.safeTask(t) for t in session.view_list(filt)],
-            }
-    return res
-
-def taskCreate(session, body):
-
-    due = tasks.stringToDatetime(body["due"])
+    def task_list(self, body):
     
-    task = session.task(
-            body["title"], 
-            due,
-            body["parent_id"], )
-
-    assert task is not None
-
-    res = {'task': tasks.safeTask(task)}
-
-    return res
-
-def taskUpdateDue(session, body):
-    task_id = body["task_id"]
-    due = tasks.stringToDatetime(body["due"])
-    session.updateDue(session.filter_id(task_id), due)
-    return "update due success"
-
-def taskUpdateStatus(session, body):
-    task_id = body["task_id"]
-    status = tasks.Status[body["status"]]
-    session.updateStatus(session.filter_id(task_id), status)
-    return "success"
-
-def taskDelete(session, body):
-    task_id = body["task_id"]
-    session.task_delete(task_id)
-    return "success"
-
-def taskUpdateTitle(session, body):
-    task_id = body["task_id"]
-    title = body["title"]
-    session.updateTitle(session.filter_id(task_id), title)
-    return "success"
-
-def taskUpdateIsContainer(session, body):
-    task_id = body["task_id"]
-    session.updateIsContainer(session.filter_id(task_id), body["isContainer"])
-    return "update isContainer success"
-
-def taskUpdateParent(session, body):
-    task_id = body["task_id"]
-    parent_id_str = body["parent_id_str"]
-    session.updateParent(session.filter_id(task_id), parent_id_str)
-    return "success"
-
-def taskPushPost(session, body):
-    session.taskPushPost(body["task_id"], body["text"])
-    return "push post success"
-
+        if body['filter_string']:
+            filt = json.loads(body['filter_string'])
+        else:
+            filt = {}
+    
+        res = {
+                'tasks': [tasks.safeTask(t) for t in self.session.view_list(filt)],
+                }
+        return res
+    
+    def taskCreate(self, body):
+    
+        due = tasks.stringToDatetime(body["due"])
+        
+        task = self.session.task(
+                body["title"], 
+                due,
+                body["parent_id"], )
+    
+        assert task is not None
+    
+        res = {'task': tasks.safeTask(task)}
+    
+        return res
+    
+    def taskUpdateDue(self, body):
+        task_id = body["task_id"]
+        due = tasks.stringToDatetime(body["due"])
+        self.session.updateDue(self.session.filter_id(task_id), due)
+        return "update due success"
+    
+    def taskUpdateStatus(self, body):
+        task_id = body["task_id"]
+        status = tasks.Status[body["status"]]
+        self.session.updateStatus(self.session.filter_id(task_id), status)
+        return "success"
+    
+    def taskDelete(self, body):
+        task_id = body["task_id"]
+        self.session.task_delete(task_id)
+        return "success"
+    
+    def taskUpdateTitle(self, body):
+        task_id = body["task_id"]
+        title = body["title"]
+        self.session.updateTitle(self.session.filter_id(task_id), title)
+        return "success"
+    
+    def taskUpdateIsContainer(self, body):
+        task_id = body["task_id"]
+        self.session.updateIsContainer(self.session.filter_id(task_id), body["isContainer"])
+        return "update isContainer success"
+    
+    def taskUpdateParent(self, body):
+        task_id = body["task_id"]
+        parent_id_str = body["parent_id_str"]
+        self.session.updateParent(self.session.filter_id(task_id), parent_id_str)
+        return "success"
+    
+    def create_comment(self, body):
+        self.session.taskPushPost(body["task_id"], body["text"])
+    
+        
+    
+        return "push post success"
+    
 def errorResponse(err, responseBody):
     return {
         "statusCode": 400,
@@ -95,14 +100,14 @@ functions = {
         "post": taskPushPost,
         }
 
-def processBody(event, session, body):
+    def processBody(self, event, body):
     
-    try:
-        command = body["command"]
-        f = functions[command]
-        return f(session, body)
-    except Exception as e:
-        return traceback.format_exc()
+        try:
+            command = body["command"]
+            f = functions[command]
+            return f(session, body)
+        except Exception as e:
+            return traceback.format_exc()
 
 def lambda_handler(event, context):
     
@@ -116,6 +121,10 @@ def lambda_handler(event, context):
         session = tasks.session.Session(body['database'], username)
         
         commands = body['commands']
+
+        handler = Handler()
+        handler.session = session
+        handler.texts_engine = jessica.EngineDB('texts_personal')
 
         responseBody = json.dumps([processBody(event, session, b) for b in commands])
         
