@@ -39,15 +39,6 @@ function process_tasks(data) {
 
 	return tasks;
 }
-function receive_view_tasks_lists(data) {
-	var tasks = process_tasks(data);
-	load_view_tasks_lists(data.root, tasks);
-}
-function load_view_tasks_lists(root, tasks) {
-	console.log('load_view_tasks_lists', root);
-	view = new ViewTasksList(root, tasks);
-	view.load();
-}
 function taskCreate(title, due, parent_id) {
 	console.log('create task');
 
@@ -63,24 +54,13 @@ function taskCreate(title, due, parent_id) {
 			console.log('Response:');
 			console.log(result);
 
-			//receive_view_tasks_lists(result[0]);
 			var data = result[0];
 
 			var task = new Task(data.task);
 
-			var b = treeGetBranch(myApp.tasks, parent_id);
-
-			console.log(b);
-
-			if(b != null) {
-				b.children[task.task['_id']] = task;
-				b.task['children'][task.task['_id']] = task;
-			} else {
-				myApp.tasks[task.task['_id']] = task;
-			}
+			app.tasks.push(task);
 
 			view.load();
-
 		},
 		function ajaxError(jqXHR, textStatus, errorThrown) {
 			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
@@ -413,7 +393,9 @@ function create_task_detail_modal(task) {
 	button_list_view.text("go to lists view");
 	button_list_view.click((ev) => {
 		outer.css('display', 'none');
-		load_view_tasks_lists(task, task.children);
+
+		view = new ViewTasksLists(task.task['_id']);
+		view.load();
 	});
 	
 	div_controls.append(button_list_view);
@@ -531,10 +513,7 @@ function create_task_detail_modal(task) {
 		</div>
 	*/
 }
-function _load_view_tasks_lists() {
-	view = new ViewTasksLists(null);
-	view.refresh();
-
+function setup_dragging() {
 	var drag_enter = (el) => {
 		console.log('drag enter');
 		//el.css('background-color', 'red');
@@ -584,15 +563,13 @@ function _load_view_tasks_lists() {
 		}
 	}, false);
 }
-function _load_view_tasks_agenda()
-{
-	view = new ViewTasksAgenda();
-	view.refresh();
-}
-
 $(function onDocReady() {
-	_load_view_tasks_lists();
-	//_load_view_tasks_agenda();
+	setup_dragging();
+
+	view = new ViewTasksLists(null);
+	//view = new ViewTasksAgenda();
+
+	view.refresh();
 });
 
 

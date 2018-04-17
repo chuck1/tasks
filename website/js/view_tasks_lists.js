@@ -18,8 +18,10 @@ class ViewTasksLists {
 	}
 	create_root_info()
 	{
+		var root = this.get_root();
+
 		console.log('root info');
-		console.log(this.root);
+		console.log(root);
 
 		var div = $("<div>");
 
@@ -27,8 +29,8 @@ class ViewTasksLists {
 		
 		var title = $("<h1>");
 
-		if(this.root != null) {
-			title.text(this.root.task['title']);
+		if(root != null) {
+			title.text(root.task['title']);
 		} else {
 			title.text('root');
 		}
@@ -37,41 +39,33 @@ class ViewTasksLists {
 
 		// navigate up button
 			
-		if(this.root != null) {
-			var root_parent = this.root.task['parent'];
+		if(root != null) {
+			var root_parent = root.task['parent'];
 			console.log('root parent id', root_parent);
-			var p = treeGetBranch(myApp.tasks, root_parent);
-			console.log('root parent', p);
-
+			
 			var button = $("<button>");
 			button.text("up");
 			button.click((ev) => {
-				console.log(p);
-
-				if(p == null) {
-					load_view_tasks_lists(null, myApp.tasks);
-				} else {
-					load_view_tasks_lists(p, p.children);
-				}
+				view.root_id = root_parent;
+				view.load()
 			});
 			div.append(button);
 		}
 
 		// droppable
 		
-		div.append(create_droppable(this.root));
+		div.append(create_droppable(root));
 
 		return div;
 	}
 	load()
 	{
-		$("#divTasks").show();
-
-		var div = $("#divTasks");
+		var div = $("div#view");
 		
 		div.empty();
 
 		var div_lists = $("<div>");
+		div_lists.addClass('tasks_lists');
 
 		// clear select element
 		$("#formCreateInputParent option").remove();
@@ -117,10 +111,7 @@ class ViewTasksLists {
 		var input = $('<input type="text">');
 		var button = $('<button>save</button>');
 
-		var parent_id = null;
-		if(this.root != null) {
-			parent_id = this.root.task['_id'];
-		}
+		var parent_id = this.root_id;
 
 		button.click((ev) => {
 			taskCreate(input.val(), null, parent_id);

@@ -15,6 +15,13 @@ class Application
 		}
 		return tasks;
 	}
+	get_task(task_id) {
+		if(task_id == null) return null;
+		for(var i = 0; i < this.tasks.length; i++) {
+			if(this.tasks[i].task['_id'] == task_id) return this.tasks[i];
+		}
+		return null;
+	}
 	treeGetBranch(tree, task_id) {
 		for(var task_id1 in tree)
 		{
