@@ -92,6 +92,40 @@ function taskCreate(title, due, parent_id) {
 		});
 }
 
+function get_tasks_list(filter_string) {
+	
+	return new Promise((resolve, reject) => {
+
+		callAPI(
+			[{
+				"command": "list 1",
+				"filter_string": filter_string,
+			}],
+			function(result)
+			{
+				console.log('Response:');
+				console.log(result);
+
+				var tasks = [];
+				var data = result[0];
+
+				data.tasks.forEach(function(task) {
+					tasks.push(new Task(task));
+				});
+
+				// store so we can later navigate to root
+				//myApp.tasks = tasks;
+
+				resolve(tasks);
+			},
+			function ajaxError(jqXHR, textStatus, errorThrown) {
+				console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
+				console.error('Response: ', jqXHR.responseText);
+				alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
+			});
+	});
+}
+
 function tasks_view_list(root_task_id) {
 	callAPI(
 		[{
@@ -264,20 +298,38 @@ function format_date(date)
 
 	return ret;
 }
-function compare_int(a, b) {
-	var c = 0;
-	if(a < b) { c = -1; }
-	if(b > a) { c = 1; }
-	console.log(a, b, a - b, c);
-	return 0;
-}
 function compare(a, b) {
 	var c = 0;
 	if(a < b) { c = -1; }
 	if(b < a) { c = 1; }
 	//console.log('compare', typeof a, typeof b);
 	//console.log(a, b, a - b, c);
-	return 0;
+	return c;
+}
+function sort_task_array(arr) {
+
+	console.log('sort');
+
+	arr.sort(function(a, b) {
+		d1 = a.due();
+		d2 = b.due();
+
+		if((d1 != null) || (d2 != null)) {
+			if(d1 == null) return 1;
+			if(d2 == null) return -1;
+
+			var c = compare(d1.valueOf(), d2.valueOf());
+			console.log('sort by date', d1, d2, c);
+			if(c != 0) {
+				return c;
+			}
+		}
+
+		c = compare(a.task['title'], b.task['title']);
+		if(c != 0) return c;
+
+		return compare(a.task['_id'], b.task['_id']);
+	});
 }
 function tasks_to_array(tasks) {
 	var arr = Object.values(tasks);
@@ -286,16 +338,11 @@ function tasks_to_array(tasks) {
 		d1 = a.due();
 		d2 = b.due();
 
-		//console.log('sort');
-		//console.log(d1);
-		//console.log(d2);
-
 		if((d1 != null) || (d2 != null)) {
 			if(d1 == null) return 1;
 			if(d2 == null) return -1;
 
 			var c = compare(d1.valueOf(), d2.valueOf());
-			//console.log('compare', c);
 			if(c != 0) {
 				console.log('sort by date', c);
 				return c;
@@ -480,7 +527,7 @@ function create_task_detail_modal(task) {
 	
 	// the rest
 
-	table.append("<tr><td>Parent: <select id=\"parent\"></select></td></tr>");
+	table.append("<tr><td>Parent: " + task.task["parent"] + "</td></tr>");
 	table.append("<tr><td>Is container: <input type=\"checkbox\" id=\"isContainer\"></td></tr>");
 	
 	// save button
@@ -560,27 +607,10 @@ function create_task_detail_modal(task) {
 		</div>
 	*/
 }
-$(function onDocReady() {
+function _load_view_tasks_lists() {
+
 	var root_task_id = null;
 	tasks_view_list(root_task_id);
-
-	/*
-	$('#formCreate').submit(handleFormCreate);
-	//$('#formTaskEdit').submit(handleFormTaskEdit);
-	
-	$("#form_post form").submit(handleFormPost);
-	*/
-	/*
-	$('#divTaskEditTaskCreate form').submit(function(event) {
-		event.preventDefault();
-		handleFormTaskEditTaskCreate(event)
-	});
-	*/
-	/*
-	$("#divTaskDetail #cancelled").click(function(){
-		taskUpdateStatusCurrent("CANCELLED");
-	});
-	*/
 
 	var drag_enter = (el) => {
 		console.log('drag enter');
@@ -630,7 +660,16 @@ $(function onDocReady() {
 			});
 		}
 	}, false);
+}
+function _load_view_tasks_agenda()
+{
+	view = new ViewTasksAgenda([]);
+	view.refresh();
+}
 
+$(function onDocReady() {
+	//_load_view_tasks_lists();
+	_load_view_tasks_agenda();
 });
 
 

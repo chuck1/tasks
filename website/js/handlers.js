@@ -21,7 +21,6 @@ function callAPI(data, onSuccess, onFailure) {
 	console.log("callAPI");
 	console.log(data1);
 	console.log('send to', url);
-	console.log(myApp.authToken);
 
 	$.ajax({
 		method: 'POST',

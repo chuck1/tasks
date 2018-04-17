@@ -159,6 +159,15 @@ class Session:
 
         return collections.OrderedDict((id_, t) for id_, t in task_list.items() if t.get("parent", None) is None)
 
+    def view_list(self, filt):
+        def _stages():
+            yield from self.agg_status_last()
+            yield from self.agg_status_last_none()
+            yield {'$match': filt}
+
+        for i in self.aggregate(list(_stages())):
+            yield tasks.task.Task(self, i)
+
     def task_delete(self, task_id):
         self.db.tasks.delete_one(self.filter_id(task_id))
 

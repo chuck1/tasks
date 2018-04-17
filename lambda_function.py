@@ -18,6 +18,18 @@ def taskList(session, body):
             }
     return res
 
+def task_list(session, body):
+
+    if body['filter_string']:
+        filt = json.loads(body['filter_string'])
+    else:
+        filt = {}
+
+    res = {
+            'tasks': [tasks.safeTask(t) for t in session.view_list(filt)],
+            }
+    return res
+
 def taskCreate(session, body):
 
     due = tasks.stringToDatetime(body["due"])
@@ -92,6 +104,7 @@ def errorResponse(err, responseBody):
 
 functions = {
         "list": taskList,
+        "list 1": task_list,
         "create": taskCreate,
         "update_status": taskUpdateStatus,
         "update_title": taskUpdateTitle,

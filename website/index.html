@@ -6,18 +6,10 @@
 	</head>
 	<body>
 		<div id="divTasks" class="tasks_lists container"></div>
-		
-		<!--
-		<div id="divTaskCreate" style="display:default">
-			<h1>Create</h1>
-	            	<form id="formCreate">
-				<input type="text" id="formCreateInputTitle" placeholder="Title" required><br>
-				<input type="text" id="formCreateInputDue" placeholder="Due date (UTC)"><br>
-				<select id="formCreateInputParent"></select><br>
-				<input type="submit" value="Create">
-	        	</form>
-		</div>
-		-->
+
+		<div id="view">
+
+
 		<script src="js/vendor/jquery-3.1.0.js"></script>
 		<!--<script src="js/vendor/bootstrap.min.js"></script>-->
 	        <script src="js/vendor/aws-cognito-sdk.min.js"></script>
@@ -25,12 +17,15 @@
 
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
+		<script src="https://www.rawgit.com/chuck1/elephant/master/javascript/elephant.js">
+
 		<script src="js/markdown/markdown.js"></script>
 
 		<script src="js/config.js"></script>
 	        <script src="js/cognito-auth.js"></script>
 		
 		<script src="js/view_tasks_lists.js"></script>
+		<script src="js/view_tasks_agenda.js"></script>
 		<script src="js/util.js"></script>
 		<script src="js/task.js"></script>
 		<script src="js/handlers.js"></script>
