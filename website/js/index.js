@@ -314,26 +314,6 @@ function taskUpdateStatus(task, status_string)
 			alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
 		});
 }
-function resetParentSelect(tag, selected_task_id)
-{
-	tag.children().remove();
-
-	tag.append($("<option value=\"None\">None</option>"));
-
-	treeIter(myApp.tasks, 0, function(task, level) {
-		var selected = "";
-
-		if(task.task["_id"] == selected_task_id)
-		{
-			selected = "selected=\"selected\"";
-		}
-
-		var op = $("<option value=\""+ task.task["_id"] +"\" " + selected + ">");
-		op.html('-'.repeat(level) + task.task["title"])
-
-		tag.append(op);
-	});
-}
 function loadPosts(task) {
 	var div = $("div#posts");
 	div.children().remove();
@@ -480,7 +460,6 @@ function create_task_detail_modal(task) {
 	$("body").append(outer);
 	/*
 	// update parent select tag 
-	resetParentSelect($("#divTaskDetail #parent"), task.task["parent"]);
 
 	loadPosts(task);
 

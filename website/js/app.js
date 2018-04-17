@@ -9,7 +9,7 @@ class Application
 		for(var i = 0; i < this.tasks.length; i++) {
 			console.log(this.tasks[i].task['parent']);
 			var p = this.tasks[i].task['parent'];
-			if((p == null) || (p == 'None')) {
+			if(p == null) {
 				tasks.push(this.tasks[i]);
 			}
 		}

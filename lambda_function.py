@@ -8,16 +8,6 @@ import tasks.session
 def breakpoint():
     import pdb;pdb.set_trace();
 
-def taskList(session, body):
-    #tree = session.tree(session.task_view_default())
-    #return tasks.safeDict(tree.tree)
-
-    res = {
-            'tasks': tasks.safeDict(session.task_view_default()),
-            'root': None,
-            }
-    return res
-
 def task_list(session, body):
 
     if body['filter_string']:
@@ -34,20 +24,10 @@ def taskCreate(session, body):
 
     due = tasks.stringToDatetime(body["due"])
     
-    p = body["parent_id"]
-
-    if p:
-        if body["parent_id"] == "None":
-            parent_id = None
-        else:
-            parent_id = body["parent_id"]
-    else:
-        parent_id = None
-    
     task = session.task(
             body["title"], 
             due,
-            parent_id, )
+            body["parent_id"], )
 
     assert task is not None
 
