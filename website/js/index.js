@@ -668,8 +668,8 @@ function _load_view_tasks_agenda()
 }
 
 $(function onDocReady() {
-	//_load_view_tasks_lists();
-	_load_view_tasks_agenda();
+	_load_view_tasks_lists();
+	//_load_view_tasks_agenda();
 });
 
 
