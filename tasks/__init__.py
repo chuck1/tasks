@@ -2,10 +2,11 @@ __version__ = '0.1'
 import argparse
 import functools
 import collections
+import json
 import os
 import time
 import datetime
-from pprint import pprint
+import pprint
 import re
 import enum
 
@@ -14,8 +15,6 @@ import pytz
 import pymongo
 import bson
 
-from .todo_datetime import *
-from .status import *
 import tasks.session
 
 def clean(args):
@@ -26,15 +25,53 @@ def clean(args):
             print(s)
             c.drop_database(s)
 
+def process_post(post):
+    for k, v in post.items():
+        if k == 'user_id':
+            v = str(v)
+        if k == 'datetime':
+            v = str(v)
+
+        yield k, v
+
+def process_posts(posts):
+    for p in posts:
+        yield dict(process_post(p))
+
+def process_task(t):
+    for k, v in t.items():
+        if k in ['due', 'status']:
+             v = v[-1]['value']
+        
+        if k == 'dt_create':
+            v = str(v)
+        if k == 'due':
+            v = str(v)
+
+        if isinstance(v, bson.objectid.ObjectId):
+            v = str(v)
+
+        if k == 'posts':
+            v = list(process_posts(v))
+
+        yield k, v
+
+def process_tasks(tasks):
+    for t in tasks:
+        t1 = dict(process_task(t))
+        yield t1
+
 def dump(args):
     session = tasks.session.Session(args.db, 'charlesrymal-at-gmail.com')
     
-    for t in session.db.tasks.find({}):
-        for k, v in t.items():
-            if k in ['due', 'status']:
-                v = v[-1]['value']
+    task_list = list(process_tasks(session.db.tasks.find({})))
 
-            print(f'{k:16} {v!r}')
+    pprint.pprint(task_list)
+    
+    with open('dump.json', 'w') as f:
+        json.dump(task_list, f)
+
+def restore(args):
 
 def main(av):
     
@@ -53,6 +90,9 @@ def main(av):
 
     parser_clean = subparsers.add_parser('clean')
     parser_clean.set_defaults(func=clean)
+
+    parser_restore = subparsers.add_parser('restore')
+    parser_restore.set_defaults(func=clean)
 
     args = parser.parse_args(av)
     args.func(args)
