@@ -1,8 +1,6 @@
 /*global myApp _config AmazonCognitoIdentity AWSCognito*/
 
-var myApp = window.myApp || {};
-var app = {};
-
+var app = new Application();
 var view = null;
 
 var authToken;
@@ -92,59 +90,6 @@ function taskCreate(title, due, parent_id) {
 		});
 }
 
-function get_tasks_list(filter_string) {
-	
-	return new Promise((resolve, reject) => {
-
-		callAPI(
-			[{
-				"command": "list 1",
-				"filter_string": filter_string,
-			}],
-			function(result)
-			{
-				console.log('Response:');
-				console.log(result);
-
-				var tasks = [];
-				var data = result[0];
-
-				data.tasks.forEach(function(task) {
-					tasks.push(new Task(task));
-				});
-
-				// store so we can later navigate to root
-				//myApp.tasks = tasks;
-
-				resolve(tasks);
-			},
-			function ajaxError(jqXHR, textStatus, errorThrown) {
-				console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
-				console.error('Response: ', jqXHR.responseText);
-				alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
-			});
-	});
-}
-
-function tasks_view_list(root_task_id) {
-	callAPI(
-		[{
-			"command": "list",
-			"root": root_task_id,
-		}],
-		function(result)
-		{
-			console.log('Response:');
-			console.log(result);
-
-			receive_view_tasks_lists(result[0]);
-		},
-		function ajaxError(jqXHR, textStatus, errorThrown) {
-			console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
-			console.error('Response: ', jqXHR.responseText);
-			alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
-		});
-}
 
 function treeIter(tree, level, func)
 {
@@ -155,23 +100,6 @@ function treeIter(tree, level, func)
 		
 		treeIter(task.children, level + 1, func);
 	});
-}
-function treeGetBranch(tree, task_id)
-{
-	for(var task_id1 in tree)
-	{
-		if(tree.hasOwnProperty(task_id1))
-		{
-			var branch = tree[task_id1];
-
-			if(task_id1 == task_id) return branch;
-			
-			branch = treeGetBranch(branch.children, task_id);
-
-			if(branch) return branch;
-		}
-	}
-	return null;
 }
 function datetime_easy_read(datetime, now) {
 
@@ -608,9 +536,7 @@ function create_task_detail_modal(task) {
 	*/
 }
 function _load_view_tasks_lists() {
-
-	var root_task_id = null;
-	tasks_view_list(root_task_id);
+	view = new ViewTasksLists();
 
 	var drag_enter = (el) => {
 		console.log('drag enter');
@@ -663,7 +589,7 @@ function _load_view_tasks_lists() {
 }
 function _load_view_tasks_agenda()
 {
-	view = new ViewTasksAgenda([]);
+	view = new ViewTasksAgenda();
 	view.refresh();
 }
 

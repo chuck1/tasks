@@ -1,8 +1,16 @@
 
 class ViewTasksList {
-	constructor(root, tasks) {
-		this.root = root;
-		this.tasks = tasks;
+	constructor(root_id) {
+		this.root_id = root_id;
+	}
+	refresh() {
+		get_tasks_list(this.filter_string).then((tasks) => {
+			this.tasks = tasks;
+			this.load();
+		});
+	}
+	get_root() {
+		
 	}
 	create_root_info()
 	{

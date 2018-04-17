@@ -1,8 +1,6 @@
 
 class ViewTasksAgenda {
-
-	constructor(tasks) {
-		this.tasks = tasks;
+	constructor() {
 		this.filter_string = '';
 	}
 	load() {
@@ -49,7 +47,6 @@ class ViewTasksAgenda {
 		return div;
 	}
 	refresh() {
-
 		get_tasks_list(this.filter_string).then((tasks) => {
 			
 			this.tasks = tasks;
