@@ -33,7 +33,7 @@ class Task {
 
 		if(num_children_display > 0) return true;
 		
-		if(this.task["status_last"] != "NONE") return false;
+		if(this.task["status"] != 0) return false;
 		
 		if(this.task["isContainer"]) return false;
 

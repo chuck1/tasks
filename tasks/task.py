@@ -1,71 +1,35 @@
 import tasks
+import datetime
+import bson
 
 def breakpoint(): import pdb;pdb.set_trace();
 
 class Task:    
     column_width = {'title': 48}
     
-    def __init__(self, session, d):
-        self.session = session
+    def __init__(self, e, d):
+        self.e = e
         self.__d = d
 
-        if 'status' in d:
-            for e in d['status']:
-                if isinstance(e['value'], str):
-                    #breakpoint()
-                    pass
-
     def __getitem__(self, key):
-        if key == 'status':
-            pass
-            #breakpoint()
-
         return self.__d[key]
     
     def __setitem__(self, key, value):
-        if key == 'status':
-            pass
-            #breakpoint()
-
         self.__d[key] = value
     
     def get(self, key, default):
-        if key == 'status':
-            #breakpoint()
-            pass
-
         return self.__d.get(key, default)
 
-    @property
-    def due(self):
-        # TODO consider descriptor that would update DB on set
-        if 'due_last' in self.__d: return self.__d['due_last']
-        if 'due' in self.__d: return self.__d['due'][-1]['value']
-        raise Exception('cannot find due datetime')
-
-    @property
-    def status(self):
-        # TODO consider descriptor that would update DB on set
-        if 'status_last' in self.__d:
-            return self.__d['status_last']
-
-        if 'status' in self.__d: 
-            return self.__d['status'][-1]['value']
-
-        raise Exception('cannot find status')
-
     def __lt__(self, other):
-        if other['due_last'] is None: return True
-        if self.__d['due_last'] is None: return False
-        return self.__d['due_last'] < other['due_last']
+        if other['due'] is None: return True
+        if self.__d['due'] is None: return False
+        return self.__d['due'] < other['due']
 
-    def posts(self):
-        for post in self.__d.get("posts", []):
-            yield tasks.SafePost(self.session, post)
+    def comments(self):
+        return []
     
     def due_str(self):
-        due = self.__d['due_last']
-        #due_str = '{:26s}'.format(datetimeToString(due))
+        due = self.__d['due']
         
         if due:
             due = pytz.utc.localize(due)
@@ -82,4 +46,39 @@ class Task:
         s = Status(self.__d.get('status_last',0))
         return '{:11s}'.format(s.name)
 
+    def to_array(self):
+       
+        def _f(k, v):
+            if isinstance(v, datetime.datetime):
+                v = v.timestamp()
 
+            if isinstance(v, bson.objectid.ObjectId):
+                v = str(v)
+
+            return k, v
+
+        d0 = dict(_f(k, v) for k, v in self.__d.items())
+
+        del d0['_elephant']
+
+        if not 'parent' in d0:
+            d0['parent'] = None
+
+        return d0
+        
+        return {
+                "_id": str(task["_id"]),
+                "creator": str(task["creator"]),
+                "dt_create": datetimeToString(task.get("dt_create", None)),
+                "title": task["title"],
+                "tags": task.get("tags", []),
+                "isContainer": task.get("isContainer", False),
+                "parent": str(task.get("parent", None)),
+                "due": [func_due_elem(elem) for elem in task["due"]],
+                "status": [func_status_elem(elem) for elem in task["status"]],
+                "due_last": datetimeToString(task.due),
+                "status_last": Status(task.status).name,
+                "children": dict((str(id_), safeTask(child)) for id_, child in task.get("children", {}).items()),
+                "posts": list(task.posts()),
+                }
+    

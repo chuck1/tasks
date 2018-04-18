@@ -8,12 +8,13 @@ function defaultAjaxError(jqXHR, textStatus, errorThrown) {
 }
 
 function callAPI(data, onSuccess, onFailure) {
-	db_name = getParameterByName('database')
-	console.log('database', db_name)
+	db_name_tasks = getParameterByName('database_tasks')
+	db_name_texts = getParameterByName('database_texts')
 
 	data1 = {
 		commands: data,
-		database: db_name,
+		database_tasks: db_name_tasks,
+		database_texts: db_name_texts,
 	}
 
 	url = _config.api.invokeUrl + '/tasks';

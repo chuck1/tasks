@@ -5,10 +5,9 @@ class Application
 	}
 	get_root_tasks() {
 		var tasks = [];
-		console.log('app get root tasks', this.tasks.length);
 		for(var i = 0; i < this.tasks.length; i++) {
-			console.log(this.tasks[i].task['parent']);
 			var p = this.tasks[i].task['parent'];
+			console.log('parent', p);
 			if(p == null) {
 				tasks.push(this.tasks[i]);
 			}
@@ -62,7 +61,7 @@ class Application
 
 			callAPI(
 					[{
-						"command": "list 1",
+						"command": "tasks list",
 						"filter_string": filter_string,
 					}],
 					success,

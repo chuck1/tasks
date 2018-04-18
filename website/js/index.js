@@ -153,15 +153,9 @@ function move_task(task, new_parent_id) {
 		return;
 	}
 
-	var tree1 = getSubtreeOrRoot(task.task["parent"]);
-	var tree2 = getSubtreeOrRoot(new_parent_id);
-
-	console.log(tree1);
-	console.log(tree2);
-
 	task.task["parent"] = new_parent_id;
 
-	moveTask(task.task["_id"], tree1, tree2);
+	//moveTask(task.task["_id"], tree1, tree2);
 	
 	view.load();
 

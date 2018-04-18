@@ -64,7 +64,7 @@ class Session:
 
         assert self.user is not None
 
-    def task(self, title, due=None, parent_id=None):
+    def create_task(self, title, due=None, parent_id=None):
         """
         :param title: title
         :param due: datetime object
@@ -217,34 +217,34 @@ class Session:
     def delete_many(self, filt):
         return self.db.tasks.delete_many(filt)
 
-    def updateStatus(self, filt, status):
-        """
-        update the status of all tasks whose title matches the regex
-        """
-        assert isinstance(status, Status)
-        elem = {"value": status.value, "dt": utcnow()}
-        self.db.tasks.update_many(filt, {'$push': {'status': elem}})
+    #def updateStatus(self, filt, status):
+    #    """
+    #    update the status of all tasks whose title matches the regex
+    #    """
+    #    assert isinstance(status, Status)
+    #    elem = {"value": status.value, "dt": utcnow()}
+    #    self.db.tasks.update_many(filt, {'$push': {'status': elem}})
 
-    def updateTitle(self, filt, title):
-        self.db.tasks.update_many(filt, {'$set': {'title': title}})
+    #def updateTitle(self, filt, title):
+    #    self.db.tasks.update_many(filt, {'$set': {'title': title}})
 
-    def updateIsContainer(self, filt, val):
-        self.db.tasks.update_many(filt, {'$set': {'isContainer': val}})
+    #def updateIsContainer(self, filt, val):
+    #    self.db.tasks.update_many(filt, {'$set': {'isContainer': val}})
 
-    def updateParent(self, filt, parent_id_str):
-        if not parent_id_str:
-            parent_id = None
-        elif parent_id_str == "None":
-            parent_id = None
-        else:
-            parent_id = bson.objectid.ObjectId(parent_id_str)
-
-        self.db.tasks.update_many(filt, {'$set': {'parent': parent_id}})
+    #def updateParent(self, filt, parent_id_str):
+    #    if not parent_id_str:
+    #        parent_id = None
+    #    elif parent_id_str == "None":
+    #        parent_id = None
+    #    else:
+    #        parent_id = bson.objectid.ObjectId(parent_id_str)
+    #
+    #    self.db.tasks.update_many(filt, {'$set': {'parent': parent_id}})
  
-    def updateDue(self, filt, due):
-        due = due.astimezone(pytz.utc) if due is not None else None
-        elem = {"value": due, "dt": utcnow()}
-        self.db.tasks.update_many(filt, {'$push': {'due': elem}})
+    #def updateDue(self, filt, due):
+    #    due = due.astimezone(pytz.utc) if due is not None else None
+    #    elem = {"value": due, "dt": utcnow()}
+    #    self.db.tasks.update_many(filt, {'$push': {'due': elem}})
  
     def show(self, filt):
         

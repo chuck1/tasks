@@ -12,7 +12,13 @@ zip -r $here/deployment.zip bson
 zip -r $here/deployment.zip pytz > /dev/null
 zip $here/deployment.zip crayons.py
 
-#cp $here/deployment.zip /media/sf_Documents
+cd ~/git/aardvark
+
+zip -r $here/deployment.zip aardvark
+
+cd ~/git/elephant
+
+zip -r $here/deployment.zip elephant
 
 cd $here
 
