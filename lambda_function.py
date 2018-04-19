@@ -10,8 +10,10 @@ import pymongo
 import elephant
 import jessica
 import jessica.text
+
 import tasks.session
 import tasks._datetime
+import tasks.status
 
 def breakpoint():
     import pdb;pdb.set_trace();
@@ -42,6 +44,16 @@ class Handler:
 
         res = {
                 'tasks': tasks_list,
+                'texts': texts_list,
+                }
+        return res
+     
+    def texts_find(self, body):
+        print('texts find')
+        
+        texts_list = [jessica.text.Text(self.e_texts, t).to_array() for t in self.e_texts.find(body['filter'])]
+        
+        res = {
                 'texts': texts_list,
                 }
         return res
@@ -82,20 +94,23 @@ class Handler:
         return "update due success"
     
     def taskUpdateStatus(self, body):
-        task_id = body["task_id"]
-        status = tasks.Status[body["status"]]
-        self.session.updateStatus(self.session.filter_id(task_id), status)
-        return "success"
-    
+        task_id = bson.objectid.ObjectId(body["task_id"])
+        t0 = self.e_tasks.get_content(task_id)
+        t0['status'] = body["status"]
+        self.e_tasks.put(task_id, t0)
+        t1 = self.e_tasks.get_content(task_id)
+        return f"success {t1}"
+   
     def taskDelete(self, body):
         task_id = body["task_id"]
         self.e_tasks.db.files.delete_one({'_id': task_id})
         return "success"
     
     def taskUpdateTitle(self, body):
-        task_id = body["task_id"]
-        title = body["title"]
-        self.session.updateTitle(self.session.filter_id(task_id), title)
+        task_id = bson.objectid.ObjectId(body["task_id"])
+        t0 = self.e_tasks.get_content(task_id)
+        t0['title'] = body["title"]
+        self.e_tasks.put(task_id, t0)
         return "success"
     
     def taskUpdateIsContainer(self, body):
@@ -130,6 +145,7 @@ class Handler:
                 "update_parent": self.tasks_update_parent,
                 "update_is_container": self.taskUpdateIsContainer,
                 "delete": self.taskDelete,
+                "texts find": self.texts_find,
                 "texts create": self.texts_create,
                 }
    
@@ -161,10 +177,14 @@ def lambda_handler(event, context):
         
         commands = body['commands']
 
+        print('commands', commands)
+
         handler = Handler(e_tasks, e_texts)
         #handler.texts_engine = jessica.EngineDB('texts_personal')
 
         responseBody = json.dumps([handler.processBody(event, b) for b in commands])
+
+        print('response', responseBody)
         
         return {
             "statusCode": 200,

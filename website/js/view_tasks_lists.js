@@ -60,6 +60,8 @@ class ViewTasksLists {
 		
 		div.empty();
 
+		div.append(create_button_view_texts_list());
+
 		var div_lists = $("<div>");
 		div_lists.addClass('tasks_lists');
 

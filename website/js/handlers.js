@@ -6,7 +6,39 @@ function defaultAjaxError(jqXHR, textStatus, errorThrown) {
 	console.error('Response: ', jqXHR.responseText);
 	alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
 }
+function call_api(commands, callbacks) {
+	var db_name_tasks = getParameterByName('database_tasks');
+	var db_name_texts = getParameterByName('database_texts');
 
+	var data = {
+		commands: commands,
+		database_tasks: db_name_tasks,
+		database_texts: db_name_texts,
+	};
+	
+	console.log('send', data);
+
+	$.ajax({
+		method: 'POST',
+		url: _config.api.invokeUrl + '/tasks',
+		headers: {
+			Authorization: myApp.authToken
+		},
+		data: JSON.stringify(data),
+		contentType: 'application/json',
+		success: (result) => {
+			for(var i = 0; i < commands.length; ++i) {
+				console.log(result[i]);
+				callbacks[i](result[i]);
+			}
+		},
+		error: (jqXHR, textStatus, errorThrown) => {
+			console.error(jqXHR);
+			console.error(textStatus);
+			console.error(errorThrown);
+		}
+	});
+}
 function callAPI(data, onSuccess, onFailure) {
 	db_name_tasks = getParameterByName('database_tasks');
 	db_name_texts = getParameterByName('database_texts');

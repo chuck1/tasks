@@ -63,7 +63,7 @@ class ViewTask {
 		var button_save = $("<button>Update</button>");
 
 		button_save.click((ev) => {
-			handleFormTaskEdit(ev, this.task, input_title, input_due);
+			handleFormTaskEdit(ev, _this.task, input_title, input_due);
 		});
 
 		append_row(table, button_save);
@@ -77,7 +77,7 @@ class ViewTask {
 		var button_complete = $("<button id=\"complete\">complete</button>");
 
 		button_complete.click(function() {
-			taskUpdateStatus(this.task, "COMPLETE");
+			taskUpdateStatus(_this.task, 1);
 			_this.outer.css('display', 'none');
 		});
 
@@ -96,8 +96,6 @@ class ViewTask {
 		});
 
 		this.container.append(button_delete);
-
-
 
 		// comments
 

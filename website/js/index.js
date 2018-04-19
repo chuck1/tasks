@@ -292,17 +292,13 @@ function taskDelete(task, on_delete) {
 		},
 		defaultAjaxError);
 }
-function taskUpdateStatusCurrent(status_string)
-{
-	taskUpdateStatus(myApp.taskCurrent, status_string);
-}
-function taskUpdateStatus(task, status_string)
+function taskUpdateStatus(task, status_)
 {
 	console.log('update status');
 	console.log(task);
-	console.log(status_string);
+	console.log(status_);
 
-	task.task["status_last"] = status_string;
+	task.task['status'] = status_;
 
 	view.load();
 
@@ -310,7 +306,7 @@ function taskUpdateStatus(task, status_string)
 		[{
 			"command": "update_status",
 			"task_id": task.task["_id"],
-			"status": status_string
+			"status": status_
 		}],
 		function(result) {
 			console.log('update status result:', result);

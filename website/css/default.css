@@ -43,6 +43,27 @@ div.tasks_list_item.drop {
 	height: 30px;
 }
 
+/* texts view list */
+
+.texts_view_list_file {
+	background-color: rgb(240,240,240);
+	margin: 5px;
+	padding: 2px;
+	border-radius: 3px;
+}
+.texts_view_list_file table {
+	border-collapse: collapse;
+}
+.texts_view_list_file table td {
+	border-style: solid;
+	border-width: 1px;
+	border-collapse: collapse;
+	border-color: rgb(173, 173, 173);
+}
+
+
+
+
 div#divTaskDetail {
 	background-color: #cccccc;
 }
