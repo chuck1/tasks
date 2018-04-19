@@ -26,6 +26,9 @@ def datetimeToString(d):
     return d.strftime("%Y-%m-%d %H:%M")
 
 def stringToDatetime(s):
+    if isinstance(s, int):
+        return datetime.datetime.fromtimestamp(s)
+
     if s:
         try:
             naive = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M")

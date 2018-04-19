@@ -410,7 +410,7 @@ function setup_dragging() {
 		}
 	}, false);
 }
-function create_div_comments(task, texts) {
+function create_div_comments(task, texts, callback) {
 	var div = $("<div>");
 
 	texts.forEach((text) => {
@@ -436,15 +436,22 @@ function create_div_comments(task, texts) {
 
 	div.append(div_text_entry((text) => {
 		create_comment(task.task._id, text);
+		if(callback) {
+			callback();
+		}
 	}));
 
 	return div;
 }
 function create_comment(task_id, text) {
+	var date = new Date();
+
+	console.log(date);
+
 	var text1 = {
 		task: task_id,
 		text: text,
-		date: Date.now()
+		date: Math.round(date.valueOf() / 1000),
 	};
 	
 	var text2 = new Text(text1);

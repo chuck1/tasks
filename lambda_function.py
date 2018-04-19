@@ -58,7 +58,9 @@ class Handler:
     
         return res
     
-    def texts_create(self, text):
+    def texts_create(self, body):
+        text = body['text']
+
         if 'date' in text:
             text["date"] = tasks._datetime.stringToDatetime(text["date"])
 
@@ -87,7 +89,7 @@ class Handler:
     
     def taskDelete(self, body):
         task_id = body["task_id"]
-        self.session.task_delete(task_id)
+        self.e_tasks.db.files.delete_one({'_id': task_id})
         return "success"
     
     def taskUpdateTitle(self, body):
