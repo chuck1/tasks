@@ -66,19 +66,4 @@ class Task:
 
         return d0
         
-        return {
-                "_id": str(task["_id"]),
-                "creator": str(task["creator"]),
-                "dt_create": datetimeToString(task.get("dt_create", None)),
-                "title": task["title"],
-                "tags": task.get("tags", []),
-                "isContainer": task.get("isContainer", False),
-                "parent": str(task.get("parent", None)),
-                "due": [func_due_elem(elem) for elem in task["due"]],
-                "status": [func_status_elem(elem) for elem in task["status"]],
-                "due_last": datetimeToString(task.due),
-                "status_last": Status(task.status).name,
-                "children": dict((str(id_), safeTask(child)) for id_, child in task.get("children", {}).items()),
-                "posts": list(task.posts()),
-                }
-    
+   

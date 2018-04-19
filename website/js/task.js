@@ -41,24 +41,33 @@ class Task {
 	}
 	due()
 	{
-		var children_due = this.get_children().map(child => child.due());
+		var children = this.get_children();
+		
+		var children_due = children.map(child => child.due());
 		
 		var children_due2 = children_due.map(function (d) {
 			if(d == null) return null;
 			return new Date(d);
 		});
-
-
-		var i = argmin(children_due2);
+		
+		var i = argmin(children_due);
 
 		//if(task["due_last"] != "None") return task["due_last"];
-
-		if(i == -1) return date_or_null(this.task["due_last"]);
-
-		if(this.task["due_last"] == null) return children_due2[i];
 		
-		var d0 = new Date(this.task["due_last"]);
 
+		if(i == -1) {
+			var d0 = this.task["due"];
+			if(d0 == null) return d0;
+			d1 = new Date(d0);
+			console.log(d0);
+			console.log(d1);
+			return d1;
+		}
+
+		if(this.task["due"] == null) return children_due2[i];
+		
+		var d0 = new Date(this.task["due"]);
+		
 		if(d0 < children_due2[i]) {
 			return d0;
 		}
