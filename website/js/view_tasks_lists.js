@@ -20,9 +20,6 @@ class ViewTasksLists {
 	{
 		var root = this.get_root();
 
-		console.log('root info');
-		console.log(root);
-
 		var div = $("<div>");
 
 		// title
@@ -41,7 +38,6 @@ class ViewTasksLists {
 			
 		if(root != null) {
 			var root_parent = root.task['parent'];
-			console.log('root parent id', root_parent);
 			
 			var button = $("<button>");
 			button.text("up");
@@ -82,7 +78,6 @@ class ViewTasksLists {
 	}
 	create_lists(container)
 	{
-		console.log('create lists');
 		
 		var root = this.get_root();
 		var tasks = null;
@@ -93,9 +88,6 @@ class ViewTasksLists {
 		}
 		
 		sort_task_array(tasks);
-
-		console.log('root', root);
-		console.log('tasks', tasks);
 
 		tasks.forEach(function(task) {
 			create_list(container, task);
@@ -114,7 +106,7 @@ class ViewTasksLists {
 		var parent_id = this.root_id;
 
 		button.click((ev) => {
-			taskCreate(input.val(), null, parent_id);
+			tasks_create(input.val(), null, parent_id);
 		});
 
 		div.append(input);
@@ -319,7 +311,7 @@ function create_list(container, task)
 	var button = $('<button>save</button>');
 
 	button.click((ev) => {
-		taskCreate(input.val(), null, task.task['_id']);
+		tasks_create(input.val(), null, task.task['_id']);
 	});
 
 	div_child_form.append(input);

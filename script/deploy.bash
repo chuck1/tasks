@@ -6,6 +6,9 @@ zip -r deployment.zip tasks
 
 cd env/lib/python3.6/site-packages
 
+zip -r $here/deployment.zip markupsafe > /dev/null
+zip -r $here/deployment.zip jinja2 > /dev/null
+zip -r $here/deployment.zip markdown > /dev/null
 zip -r $here/deployment.zip pymongo > /dev/null
 zip -r $here/deployment.zip colorama
 zip -r $here/deployment.zip bson
@@ -13,11 +16,12 @@ zip -r $here/deployment.zip pytz > /dev/null
 zip $here/deployment.zip crayons.py
 
 cd ~/git/aardvark
-
 zip -r $here/deployment.zip aardvark
 
-cd ~/git/elephant
+cd ~/git/jessica
+zip -r $here/deployment.zip jessica
 
+cd ~/git/elephant
 zip -r $here/deployment.zip elephant
 
 cd $here

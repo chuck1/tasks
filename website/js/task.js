@@ -59,8 +59,8 @@ class Task {
 			var d0 = this.task["due"];
 			if(d0 == null) return d0;
 			d1 = new Date(d0);
-			console.log(d0);
-			console.log(d1);
+			//console.log(d0);
+			//console.log(d1);
 			return d1;
 		}
 

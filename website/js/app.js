@@ -3,11 +3,21 @@ class Application
 {
 	constructor() {
 	}
+	get_comments(task_id) {
+		var texts = [];
+		for(var i = 0; i < this.texts.length; i++) {
+			var text = this.texts[i];
+
+			if(text.d.task == task_id) {
+				texts.push(text);
+			}
+		}
+		return texts;
+	}
 	get_root_tasks() {
 		var tasks = [];
 		for(var i = 0; i < this.tasks.length; i++) {
 			var p = this.tasks[i].task['parent'];
-			console.log('parent', p);
 			if(p == null) {
 				tasks.push(this.tasks[i]);
 			}
@@ -47,14 +57,19 @@ class Application
 				console.log(result);
 
 				var tasks = [];
+				var texts = [];
 				var data = result[0];
 
 				data.tasks.forEach(function(task) {
 					tasks.push(new Task(task));
 				});
 
-				// store so we can later navigate to root
+				data.texts.forEach(function(d) {
+					texts.push(new Text(d));
+				});
+
 				this.tasks = tasks;
+				this.texts = texts;
 
 				resolve();
 			};

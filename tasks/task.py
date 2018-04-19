@@ -50,7 +50,7 @@ class Task:
        
         def _f(k, v):
             if isinstance(v, datetime.datetime):
-                v = v.timestamp()
+                v = str(v)
 
             if isinstance(v, bson.objectid.ObjectId):
                 v = str(v)
@@ -63,6 +63,12 @@ class Task:
 
         if not 'parent' in d0:
             d0['parent'] = None
+
+        # fix datetimes
+        if 'due' in d0:
+            if isinstance(d0['due'], int):
+                pass
+                
 
         return d0
         

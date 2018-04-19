@@ -8,8 +8,8 @@ function defaultAjaxError(jqXHR, textStatus, errorThrown) {
 }
 
 function callAPI(data, onSuccess, onFailure) {
-	db_name_tasks = getParameterByName('database_tasks')
-	db_name_texts = getParameterByName('database_texts')
+	db_name_tasks = getParameterByName('database_tasks');
+	db_name_texts = getParameterByName('database_texts');
 
 	data1 = {
 		commands: data,
