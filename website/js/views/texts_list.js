@@ -16,17 +16,16 @@ class ViewTextsList {
 	}
 	load() {
 		if(this.texts.length == 1) {
-			this.load_text();
+			this.load_text(this.texts[0]);
 		} else if(this.texts.length > 1) {
 			this.load_list();
 		} else {
 			this.load_text_new();
 		}
 	}
-	load_text() {
+	load_text(text) {
 		var _this = this;
 		this.container.empty();
-		var text = this.texts[0];
 
 		var textarea_filt = $("<textarea>");
 		var textarea_text = $("<textarea>");
@@ -124,8 +123,16 @@ class ViewTextsList {
 				tr.append(td2);
 				table.append(tr);
 			});
+			
+			var button = $("<button>");
+			button.text("open");
+			button.click((ev) => {
+				_this.load_text(text);
+			});
 
 			div1.append(table);
+			div1.append(button);
+
 			div.append(div1);
 		});
 		

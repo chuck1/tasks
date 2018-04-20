@@ -10,6 +10,7 @@ import pymongo
 import elephant
 import jessica
 import jessica.text
+import weaver
 
 import tasks.session
 import tasks._datetime
@@ -194,6 +195,7 @@ def lambda_handler(event, context):
 
         db_name_tasks = body['database_tasks']
         db_name_texts = body['database_texts']
+        db_name_weavr = 'weaver1'
 
         #session = tasks.session.Session(body['database'], username)
         
@@ -201,12 +203,13 @@ def lambda_handler(event, context):
 
         e_tasks = elephant.database_global.DatabaseGlobal(client[db_name_tasks], "master")
         e_texts = jessica.EngineDB(client[db_name_texts], "master")
+        e_weavr = weaver.Engine(elephant.collection_local.CollectionLocal(client.otter1.weaver1))
         
         commands = body['commands']
 
         print('commands', commands)
 
-        handler = Handler(e_tasks, e_texts)
+        handler = Handler(e_tasks, e_texts, e_weavr)
         #handler.texts_engine = jessica.EngineDB('texts_personal')
 
         responseBody = json.dumps([handler.processBody(event, b) for b in commands])
