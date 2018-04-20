@@ -27,6 +27,14 @@ def errorResponse(err, responseBody):
         "body": json.dumps(traceback.format_exc()),
         "isBase64Encoded": False}
 
+def process_filter_from_client(filt):
+    def _f(k, v):
+        if k.endswith('_id'):
+            v = bson.objectid.ObjectId(v)
+        return k, v
+
+    return dict(_f(k, v) for k, v in filt.items())
+
 class Handler:
     def __init__(self, e_tasks, e_texts):
         self.e_tasks = e_tasks
@@ -38,6 +46,7 @@ class Handler:
             filt = json.loads(body['filter_string'])
         else:
             filt = {}
+        filt = process_filter_from_client(filt)
         
         tasks_list = [tasks.task.Task(self.e_tasks, t).to_array() for t in self.e_tasks.find(filt)]
         texts_list = [jessica.text.Text(self.e_texts, t).to_array() for t in self.e_texts.find({'field': {'$exists': False}})]
@@ -45,16 +54,18 @@ class Handler:
         res = {
                 'tasks': tasks_list,
                 'texts': texts_list,
+                'message': f'filt={filt}',
                 }
         return res
      
     def texts_find(self, body):
-        print('texts find')
-        
-        texts_list = [jessica.text.Text(self.e_texts, t).to_array() for t in self.e_texts.find(body['filter'])]
+        print('texts find', body)
+        filt = process_filter_from_client(body['filter'])
+        texts_list = [jessica.text.Text(self.e_texts, t).to_array() for t in self.e_texts.find(filt)]
         
         res = {
                 'texts': texts_list,
+                'message': f'filt={filt}',
                 }
         return res
     
@@ -79,6 +90,21 @@ class Handler:
         res = self.e_texts.put_new(text)
         res = {'inserted_id': str(res.inserted_id)}
         return res
+
+    def texts_put(self, body):
+        text_id = bson.objectid.ObjectId(body["text_id"]) if body["text_id"] is not None else None
+        print(f'texts put: {body}')
+        print(f'texts put: {text_id} {body["file"]}')
+
+        res = self.e_texts.put(text_id, body['file']);
+        
+        if text_id is None:
+            text_id = res.inserted_id
+
+        return {
+                'message': f'texts put: {text_id} {body["file"]}',
+                'text_id': str(text_id),
+                }
 
     def taskUpdateDue(self, body):
         due = tasks._datetime.stringToDatetime(body["due"])
@@ -147,6 +173,7 @@ class Handler:
                 "delete": self.taskDelete,
                 "texts find": self.texts_find,
                 "texts create": self.texts_create,
+                "texts put": self.texts_put,
                 }
    
         try:

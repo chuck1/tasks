@@ -362,3 +362,13 @@ function create_list(container, task)
 	*/
 }
 
+function create_button_view_tasks_lists() {
+	var button = $("<button>");
+	button.text("tasks lists");
+	button.click((ev) => {
+		view = new ViewTasksLists(null);
+		view.refresh();
+	});
+	return button;
+}
+
